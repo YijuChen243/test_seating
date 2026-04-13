@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>雲端考試座位管理系統 - 協作版</title>
+    <title>雲端考試座位管理系統 - 專業協作版</title>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -16,8 +16,6 @@
             --danger: #ef4444; --purple: #7c3aed;
             --text: #1e293b; --text-muted: #64748b;
             --border: #e2e8f0;
-            --admin-accent: #2563eb;
-            --teacher-accent: #7c3aed;
             --sidebar-w: 340px;
         }
 
@@ -36,8 +34,8 @@
 
         .sidebar-header { padding: 24px 20px 16px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface); z-index: 10; }
         .role-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 700; margin-bottom: 12px; }
-        .role-badge.admin { background: #dbeafe; color: var(--admin-accent); }
-        .role-badge.teacher { background: #ede9fe; color: var(--teacher-accent); }
+        .role-badge.admin { background: #dbeafe; color: #2563eb; }
+        .role-badge.teacher { background: #ede9fe; color: #7c3aed; }
         .user-display-name { font-size: 18px; font-weight: 700; }
 
         .sidebar-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 14px; }
@@ -50,7 +48,7 @@
         button { width: 100%; padding: 11px; margin-bottom: 8px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 7px; font-family: inherit; }
         button:hover { filter: brightness(0.95); transform: translateY(-1px); }
         .btn-new { background: #fee2e2; color: #b91c1c; }
-        .btn-cloud { background: #dbeafe; color: var(--primary-dark); }
+        .btn-cloud { background: #dbeafe; color: #1d4ed8; }
         .btn-load { background: #d1fae5; color: #065f46; }
         .btn-init { background: var(--text); color: white; }
         .btn-shuffle { background: var(--primary); color: white; }
@@ -65,8 +63,8 @@
             padding: 60px 50px; 
             border-radius: 4px; 
             box-shadow: 0 8px 40px rgba(0,0,0,0.06); 
-            width: 794px; /* A4 寬度基準 */
-            min-height: 1123px; /* A4 高度基準 */
+            width: 794px; 
+            min-height: 1123px; 
             position: relative; 
             display: flex;
             flex-direction: column;
@@ -79,7 +77,6 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             background: #fff; cursor: grab; position: relative; transition: 0.2s; user-select: none;
         }
-        .seat:active { cursor: grabbing; transform: scale(1.05); z-index: 5; }
         .seat.is-fixed { background: var(--fixed); border-color: var(--fixed-border); }
         .seat.drag-over { border: 2px dashed var(--primary); background: #eff6ff; }
         .student-name { font-size: 1.1rem; font-weight: 700; pointer-events: none; text-align: center; word-break: break-all; padding: 0 5px; }
@@ -125,22 +122,15 @@
         <div id="admin-setup-panel" class="config-group" style="display:none; background:#f5f3ff;">
             <h3>🛡️ 權限與協作管理</h3>
             <div id="main-admin-info" style="font-size:11px; color:var(--purple); margin-bottom:10px; line-height:1.4;"></div>
-            
-            <label>選擇對象 (僅顯示已註冊成員)</label>
+            <label>選擇對象 (已註冊成員)</label>
             <select id="setup-username-select"><option value="">載入中...</option></select>
-            
             <div class="btn-row">
                 <button onclick="assignRole('admin')" class="btn-init" style="background:var(--purple); font-size:12px;">🔝 升級管理者</button>
                 <button onclick="assignRole('teacher')" class="btn-init" style="background:var(--primary); font-size:12px;">👨‍🏫 指派導師</button>
             </div>
-            
             <label style="margin-top:10px;">指派導師班級 (僅導師有效)</label>
             <select id="setup-class"><option value="">選擇班級</option></select>
-            
-            <div class="admin-list" id="admin-list">
-                <strong>現有成員清單：</strong>
-                <div id="member-items">讀取中...</div>
-            </div>
+            <div class="admin-list" id="admin-list"><strong>成員清單：</strong><div id="member-items"></div></div>
         </div>
 
         <div class="config-group">
@@ -158,9 +148,9 @@
         </div>
 
         <div class="config-group" id="layout-group">
-            <h3>✏️ 教室配置 (管理者)</h3>
+            <h3>✏️ 教室配置</h3>
             <label>班級名稱</label>
-            <input type="text" id="classTitle" oninput="syncTitle()" placeholder="例如：113學測座位">
+            <input type="text" id="classTitle" oninput="syncTitle()" placeholder="例如：資三乙">
             <div style="display:flex;gap:10px;">
                 <div style="flex:1;"><label>欄 (直列)</label><input type="number" id="cols" value="5"></div>
                 <div style="flex:1;"><label>列 (橫排)</label><input type="number" id="rows" value="5"></div>
@@ -169,11 +159,11 @@
         </div>
 
         <div class="config-group" id="shuffle-group">
-            <h3>🎲 隨機排列名單</h3>
+            <h3>🎲 隨機排位 / 編輯</h3>
             <label>學生姓名名單 (每行一位)</label>
             <textarea id="studentList" placeholder="每行輸入一個姓名..." style="height:100px;"></textarea>
             <button class="btn-shuffle" onclick="shuffleNonFixed()">🎲 隨機排位</button>
-            <p style="font-size:11px; color:var(--text-muted); margin-top:5px;">※ 點擊座位可手動編輯，拖曳交換，右鍵鎖定位置。</p>
+            <p style="font-size:11px; color:var(--text-muted); margin-top:5px;">※ 點擊座位手動編輯，拖曳交換，右鍵鎖定位置。</p>
         </div>
 
         <button class="btn-out" onclick="handleLogout()">🚪 登出系統</button>
@@ -211,8 +201,8 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    let currentUser = null, currentRole = null, currentUsername = "", assignedClass = "", mainAdminUID = null, mainAdminName = "", isRegisterMode = false;
-    let draggedElement = null;
+    let currentUser = null, currentRole = null, currentUsername = "", assignedClass = "", mainAdminUID = null, mainAdminName = "";
+    let draggedElement = null, isRegisterMode = false;
 
     const usernameToEmail = (u) => u.trim() ? `${u.trim()}@school.local` : null;
     const showToast = (m) => { const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2500); };
@@ -264,18 +254,13 @@
                 const mSnap = await getDocs(query(collection(db, 'roles'), where('uid', '==', mainAdminUID), where('isMainAdmin', '==', true)));
                 if(!mSnap.empty){
                     const mnd = await getDoc(doc(db, 'usernames', mSnap.docs[0].id));
-                    mainAdminName = mnd.exists() ? mnd.data().displayName : "原創管理者";
+                    mainAdminName = mnd.exists() ? mnd.data().displayName : "主管理者";
                 }
             } else {
-                mainAdminUID = user.uid;
-                mainAdminName = currentUsername;
+                mainAdminUID = user.uid; mainAdminName = currentUsername;
             }
 
-            applyUI();
-            refreshClassList();
-            refreshMemberList();
-            refreshUserSelect();
-            initGrid();
+            applyUI(); refreshClassList(); refreshMemberList(); refreshUserSelect(); initGrid();
         } else { document.getElementById('auth-overlay').classList.remove('hidden'); }
     });
 
@@ -285,13 +270,11 @@
         document.getElementById('role-badge').className = "role-badge " + (isAdmin ? "admin" : "teacher");
         document.getElementById('admin-setup-panel').style.display = isAdmin ? 'block' : 'none';
         document.getElementById('layout-group').style.display = isAdmin ? 'block' : 'none';
-        document.getElementById('shuffle-group').style.display = 'block';
-        document.getElementById('btn-new').style.display = isAdmin ? 'block' : 'none';
         
         if(isAdmin && mainAdminUID !== currentUser.uid) {
-            document.getElementById('main-admin-info').innerText = `🔗 協作模式：正在編輯 ${mainAdminName} 的資料庫`;
+            document.getElementById('main-admin-info').innerText = `🔗 協作模式：編輯 ${mainAdminName} 的班級資料`;
         } else if(isAdmin) {
-            document.getElementById('main-admin-info').innerText = `🏠 主管理者：這是您的主資料庫`;
+            document.getElementById('main-admin-info').innerText = `🏠 主管理者：個人資料庫`;
         }
         
         if(!isAdmin) document.getElementById('user-sub-info').innerText = `負責班級：${assignedClass || '未指派'}`;
@@ -304,17 +287,13 @@
         select.innerHTML = '<option value="">-- 選擇註冊成員 --</option>';
         const snap = await getDocs(collection(db, 'usernames'));
         snap.forEach(d => {
-            const opt = document.createElement('option');
-            opt.value = d.data().displayName;
-            opt.innerText = d.data().displayName;
-            select.appendChild(opt);
+            const opt = document.createElement('option'); opt.value = d.data().displayName; opt.innerText = d.data().displayName; select.appendChild(opt);
         });
     }
 
     async function refreshMemberList() {
         if(currentRole !== 'admin') return;
-        const items = document.getElementById('member-items');
-        items.innerHTML = "載入中...";
+        const items = document.getElementById('member-items'); items.innerHTML = "載入中...";
         const snap = await getDocs(collection(db, 'roles'));
         items.innerHTML = "";
         snap.forEach(async d => {
@@ -322,37 +301,21 @@
             const uDoc = await getDoc(doc(db, 'usernames', d.id));
             const name = uDoc.exists() ? uDoc.data().displayName : d.id;
             const data = d.data();
-            const div = document.createElement('div');
-            div.className = 'admin-item';
-            div.innerHTML = `
-                <span>${name} (${data.role === 'admin' ? '管理者' : '導師：' + (data.class || '無')})</span>
-                <button onclick="removeMember('${d.id}')" style="width:auto; padding:2px 8px; background:#fee2e2; color:red; margin:0;">刪除</button>
-            `;
+            const div = document.createElement('div'); div.className = 'admin-item';
+            div.innerHTML = `<span>${name} (${data.role === 'admin' ? '管理者' : '導師：' + (data.class || '無')})</span>
+                <button onclick="removeMember('${d.id}')" style="width:auto; padding:2px 8px; background:#fee2e2; color:red; margin:0;">刪除</button>`;
             items.appendChild(div);
         });
     }
 
-    window.removeMember = async (email) => {
-        if(!confirm('確定要移除此成員的權限？')) return;
-        await deleteDoc(doc(db, 'roles', email));
-        showToast('已移除權限');
-        refreshMemberList();
-    }
+    window.removeMember = async (email) => { if(confirm('確定要移除此成員權限？')) { await deleteDoc(doc(db, 'roles', email)); refreshMemberList(); } }
 
     window.assignRole = async (roleType) => {
-        const n = document.getElementById('setup-username-select').value;
-        const c = document.getElementById('setup-class').value;
-        if(!n) return alert('請選擇對象姓名');
+        const n = document.getElementById('setup-username-select').value, c = document.getElementById('setup-class').value;
+        if(!n) return alert('請選擇對象');
         const e = usernameToEmail(n);
-        
-        await setDoc(doc(db, 'roles', e), { 
-            role: roleType, 
-            class: roleType === 'teacher' ? c : '', 
-            sharedWith: mainAdminUID 
-        }, { merge: true });
-        
-        showToast(`已成功指派 ${n} 為 ${roleType === 'admin' ? '管理者' : '導師'}`);
-        refreshMemberList();
+        await setDoc(doc(db, 'roles', e), { role: roleType, class: roleType === 'teacher' ? c : '', sharedWith: mainAdminUID }, { merge: true });
+        showToast(`已指派 ${n} 為 ${roleType === 'admin' ? '管理者' : '導師'}`); refreshMemberList();
     };
 
     window.syncTitle = () => {
@@ -360,43 +323,31 @@
         document.getElementById('class-title-display').innerText = titleText ? `${titleText} 考試座位表` : "請輸入班級名稱";
     }
 
-    window.confirmInit = () => { if(confirm('確定重新初始化？這會清空目前所有位置。')) initGrid(); };
+    window.confirmInit = () => { if(confirm('重新初始化將清空目前佈局，確定嗎？')) initGrid(); };
     window.initGrid = () => {
         const c = parseInt(document.getElementById('cols').value) || 5, r = parseInt(document.getElementById('rows').value) || 5;
         const grid = document.getElementById('grid');
-        grid.style.gridTemplateColumns = `repeat(${c}, 120px)`;
-        grid.innerHTML = '';
+        grid.style.gridTemplateColumns = `repeat(${c}, 120px)`; grid.innerHTML = '';
         for(let i=0; i<c*r; i++) grid.appendChild(createSeat("", false));
     };
 
     function createSeat(name, fixed) {
-        const div = document.createElement('div');
-        div.className = 'seat' + (fixed ? ' is-fixed' : '');
-        div.draggable = true;
+        const div = document.createElement('div'); div.className = 'seat' + (fixed ? ' is-fixed' : ''); div.draggable = true;
         div.innerHTML = `<span class="student-name">${name}</span>`;
-
         div.onclick = () => {
             const oldName = div.querySelector('.student-name').innerText;
             const newName = prompt("學生姓名：", oldName);
             if (newName !== null) div.querySelector('.student-name').innerText = newName.trim();
         };
-
-        div.oncontextmenu = (e) => {
-            e.preventDefault();
-            div.classList.toggle('is-fixed');
-        };
-
-        div.ondragstart = (e) => {
-            draggedElement = div; e.dataTransfer.effectAllowed = "move"; div.style.opacity = "0.5";
-        };
+        div.oncontextmenu = (e) => { e.preventDefault(); div.classList.toggle('is-fixed'); };
+        div.ondragstart = (e) => { draggedElement = div; div.style.opacity = "0.5"; };
         div.ondragend = () => { draggedElement = null; div.style.opacity = "1"; document.querySelectorAll('.seat').forEach(s => s.classList.remove('drag-over')); };
         div.ondragover = (e) => { e.preventDefault(); div.classList.add('drag-over'); };
         div.ondragleave = () => div.classList.remove('drag-over');
         div.ondrop = (e) => {
             e.preventDefault();
             if (draggedElement && draggedElement !== div) {
-                const tName = div.querySelector('.student-name').innerText;
-                const tFixed = div.classList.contains('is-fixed');
+                const tName = div.querySelector('.student-name').innerText, tFixed = div.classList.contains('is-fixed');
                 div.querySelector('.student-name').innerText = draggedElement.querySelector('.student-name').innerText;
                 if(draggedElement.classList.contains('is-fixed')) div.classList.add('is-fixed'); else div.classList.remove('is-fixed');
                 draggedElement.querySelector('.student-name').innerText = tName;
@@ -426,8 +377,9 @@
         const title = document.getElementById('classTitle').value.trim();
         if(!title) return alert('請輸入班級名稱');
         
+        // 核心權限修正：如果是導師才檢查班級限制，管理者可存取任何班級
         if(currentRole === 'teacher' && title !== assignedClass) {
-            return alert(`權限不足！您只能儲存與指派給您的班級「${assignedClass}」名稱相符的資料。`);
+            return alert(`權限限制：導師只能儲存被指派的班級「${assignedClass}」。`);
         }
 
         const seats = Array.from(document.querySelectorAll('.seat')).map(s => ({
@@ -440,15 +392,16 @@
             remarks: document.getElementById('class-remarks').value, seats, 
             lastEditedBy: currentUsername, lastEditedAt: new Date().toISOString()
         });
-        showToast('✅ 雲端同步成功'); refreshClassList();
+        showToast('✅ 雲端同步完成'); refreshClassList();
     };
 
     window.loadFromDropdown = async () => {
         const s = document.getElementById('classDropdown').value;
         if(!s) return;
 
+        // 核心權限修正：導師才檢查，管理者不限制
         if(currentRole === 'teacher' && s !== assignedClass) {
-            return alert(`權限不足！您被指派負責的班級是「${assignedClass}」，無法查看其他班級資料。`);
+            return alert(`權限限制：導師只能查看被指派的班級「${assignedClass}」。`);
         }
 
         const d = await getDoc(doc(db, 'users', mainAdminUID, 'classes', s));
@@ -460,60 +413,43 @@
             document.getElementById('class-remarks').value = data.remarks || "";
             syncTitle();
             const grid = document.getElementById('grid');
-            grid.style.gridTemplateColumns = `repeat(${data.cols}, 120px)`;
-            grid.innerHTML = '';
+            grid.style.gridTemplateColumns = `repeat(${data.cols}, 120px)`; grid.innerHTML = '';
             data.seats.forEach(sd => grid.appendChild(createSeat(sd.name, sd.fixed)));
-            showToast(`已載入佈局 (最後編輯：${data.lastEditedBy || '未知'})`);
+            showToast(`已載入佈局 (由 ${data.lastEditedBy || '系統'} 編輯於 ${new Date(data.lastEditedAt).toLocaleString()})`);
         }
     };
 
     window.shuffleNonFixed = () => {
         const students = document.getElementById('studentList').value.split('\n').map(s => s.trim()).filter(s => s);
-        if(!students.length) return alert('請在文字方塊輸入學生名單');
-        const seats = Array.from(document.querySelectorAll('.seat'));
-        const available = seats.filter(s => !s.classList.contains('is-fixed'));
-        if(students.length > available.length) return alert('學生人數大於可用位置');
+        if(!students.length) return alert('請在輸入框中填入學生名單');
+        const available = Array.from(document.querySelectorAll('.seat')).filter(s => !s.classList.contains('is-fixed'));
+        if(students.length > available.length) return alert('位置不足以容納所有學生');
         available.forEach(s => s.querySelector('.student-name').innerText = "");
-        const shuffled = [...students].sort(() => Math.random() - 0.5);
-        shuffled.forEach((name, i) => available[i].querySelector('.student-name').innerText = name);
-        showToast('🎲 隨機排列完成');
+        [...students].sort(() => Math.random() - 0.5).forEach((name, i) => available[i].querySelector('.student-name').innerText = name);
+        showToast('🎲 隨機排位完成');
     };
 
     window.downloadImage = () => {
         html2canvas(document.getElementById('capture-area'), { scale: 2 }).then(canvas => {
             const link = document.createElement('a');
-            link.download = `座位表_${document.getElementById('classTitle').value || '未命名'}.png`;
+            link.download = `座位表_${document.getElementById('classTitle').value}.png`;
             link.href = canvas.toDataURL('image/png'); link.click();
         });
     };
 
     window.downloadPDF = () => {
-        const area = document.getElementById('capture-area');
-        html2canvas(area, { scale: 3 }).then(canvas => {
+        html2canvas(document.getElementById('capture-area'), { scale: 3 }).then(canvas => {
             const { jsPDF } = window.jspdf;
-            // 設定為 'p' (Portrait 直向), 'mm', 'a4'
             const pdf = new jsPDF('p', 'mm', 'a4');
             const imgData = canvas.toDataURL('image/png');
-            
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();
-            
-            // 計算圖片縮放比例，使其填滿寬度並保持 A4 比例
             const imgProps = pdf.getImageProperties(imgData);
-            const ratio = pdfWidth / imgProps.width;
-            const finalImgHeight = imgProps.height * ratio;
-
-            // 如果高度超出 A4，則縮小比例
-            let finalRatio = ratio;
-            if (finalImgHeight > pdfHeight) {
-                finalRatio = pdfHeight / imgProps.height;
-            }
-
-            const xOffset = (pdfWidth - (imgProps.width * finalRatio)) / 2;
-            const yOffset = 0; // 從最頂端開始
-
-            pdf.addImage(imgData, 'PNG', xOffset, yOffset, imgProps.width * finalRatio, imgProps.height * finalRatio);
-            pdf.save(`座位表_${document.getElementById('classTitle').value || '未命名'}.pdf`);
+            const ratio = Math.min(pdfWidth / imgProps.width, pdfHeight / imgProps.height);
+            const w = imgProps.width * ratio;
+            const h = imgProps.height * ratio;
+            pdf.addImage(imgData, 'PNG', (pdfWidth - w) / 2, 0, w, h);
+            pdf.save(`座位表_${document.getElementById('classTitle').value}.pdf`);
         });
     };
 </script>
