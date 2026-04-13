@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>雲端考試座位管理系統</title>
+    <title>雲端考試座位管理系統 - 協作版</title>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -45,9 +45,10 @@
         .config-group h3 { margin: 0 0 14px 0; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
 
         label { font-size: 13px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px; }
-        input, textarea, select { width: 100%; padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; margin-bottom: 10px; }
+        input, textarea, select { width: 100%; padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; margin-bottom: 10px; background: white; }
 
-        button { width: 100%; padding: 11px; margin-bottom: 8px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 7px; }
+        button { width: 100%; padding: 11px; margin-bottom: 8px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 7px; font-family: inherit; }
+        button:hover { filter: brightness(0.95); transform: translateY(-1px); }
         .btn-new { background: #fee2e2; color: #b91c1c; }
         .btn-cloud { background: #dbeafe; color: var(--primary-dark); }
         .btn-load { background: #d1fae5; color: #065f46; }
@@ -79,6 +80,9 @@
 
         #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 12px 24px; border-radius: 10px; opacity: 0; transition: 0.3s; z-index: 9999; }
         #toast.show { opacity: 1; }
+
+        .admin-list { font-size: 12px; margin-top: 10px; border-top: 1px solid #ddd; padding-top: 10px; }
+        .admin-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
     </style>
 </head>
 <body>
@@ -106,43 +110,56 @@
 
     <div class="sidebar-body">
         <div id="admin-setup-panel" class="config-group" style="display:none; background:#f5f3ff;">
-            <h3>👤 管理權限</h3>
-            <div id="main-admin-info" style="font-size:12px; color:var(--purple); margin-bottom:10px;"></div>
-            <input type="text" id="setup-username" placeholder="導師姓名">
+            <h3>🛡️ 權限與協作管理</h3>
+            <div id="main-admin-info" style="font-size:11px; color:var(--purple); margin-bottom:10px; line-height:1.4;"></div>
+            
+            <label>對象姓名 (須已註冊)</label>
+            <input type="text" id="setup-username" placeholder="輸入對方註冊時的姓名">
+            
+            <div class="btn-row">
+                <button onclick="assignRole('admin')" class="btn-init" style="background:var(--purple); font-size:12px;">🔝 升級管理者</button>
+                <button onclick="assignRole('teacher')" class="btn-init" style="background:var(--primary); font-size:12px;">👨‍🏫 指派導師</button>
+            </div>
+            
+            <label style="margin-top:10px;">指派導師班級 (僅導師有效)</label>
             <select id="setup-class"><option value="">選擇班級</option></select>
-            <button onclick="assignTeacher()" class="btn-init" style="background:var(--purple);">＋ 指派權限</button>
+            
+            <div class="admin-list" id="admin-list">
+                <strong>現有成員清單：</strong>
+                <div id="member-items">讀取中...</div>
+            </div>
         </div>
 
         <div class="config-group">
             <h3>🗂️ 班級管理</h3>
-            <button class="btn-new" id="btn-new" onclick="createNewClass()">➕ 建立新班級</button>
+            <button class="btn-new" id="btn-new" onclick="createNewClass()">➕ 建立新班級佈局</button>
             <select id="classDropdown"><option value="">-- 選擇班級 --</option></select>
             <div class="btn-row">
-                <button class="btn-load" onclick="loadFromDropdown()">📂 載入</button>
-                <button class="btn-cloud" onclick="saveToCloud()">☁️ 儲存</button>
+                <button class="btn-load" onclick="loadFromDropdown()">📂 載入佈局</button>
+                <button class="btn-cloud" onclick="saveToCloud()">☁️ 儲存雲端</button>
             </div>
             <div class="btn-row" style="margin-top:8px;">
-                <button class="btn-img" onclick="downloadImage()">🖼️ 圖片</button>
-                <button class="btn-pdf" onclick="downloadPDF()">📄 PDF</button>
+                <button class="btn-img" onclick="downloadImage()">🖼️ 匯出圖片</button>
+                <button class="btn-pdf" onclick="downloadPDF()">📄 匯出 PDF</button>
             </div>
         </div>
 
         <div class="config-group" id="layout-group">
-            <h3>✏️ 教室配置</h3>
+            <h3>✏️ 教室配置 (管理者)</h3>
             <label>班級名稱</label>
-            <input type="text" id="classTitle" oninput="syncTitle()" placeholder="例如：資三乙">
+            <input type="text" id="classTitle" oninput="syncTitle()" placeholder="例如：113學測座位">
             <div style="display:flex;gap:10px;">
                 <div style="flex:1;"><label>欄</label><input type="number" id="cols" value="5"></div>
                 <div style="flex:1;"><label>列</label><input type="number" id="rows" value="5"></div>
             </div>
-            <button class="btn-init" onclick="confirmInit()">🔄 重新佈局</button>
+            <button class="btn-init" onclick="confirmInit()">🔄 重新初始化佈局</button>
         </div>
 
         <div class="config-group" id="shuffle-group">
-            <h3>🎲 隨機抽籤</h3>
+            <h3>🎲 隨機排列 (管理者)</h3>
             <textarea id="studentList" placeholder="每行輸入一個姓名..." style="height:100px;"></textarea>
-            <button class="btn-shuffle" onclick="shuffleNonFixed()">🎲 開始抽籤</button>
-            <p style="font-size:11px; color:var(--text-muted); margin-top:5px;">※ 點擊座位可手動編輯姓名，長按拖曳可交換位置。</p>
+            <button class="btn-shuffle" onclick="shuffleNonFixed()">🎲 隨機排位</button>
+            <p style="font-size:11px; color:var(--text-muted); margin-top:5px;">※ 點擊座位手動編輯，拖曳可交換，右鍵可鎖定位置。</p>
         </div>
 
         <button class="btn-out" onclick="handleLogout()">🚪 登出系統</button>
@@ -155,7 +172,7 @@
         <div id="grid" class="grid"></div>
         <div style="margin-top:30px;">
             <label>📝 備註事項</label>
-            <textarea id="class-remarks" style="width:100%; height:80px; border:1px dashed #ccc; padding:10px;" placeholder="輸入備註..."></textarea>
+            <textarea id="class-remarks" style="width:100%; height:80px; border:1px dashed #ccc; padding:10px;" placeholder="可在這裡輸入考試說明或備註..."></textarea>
         </div>
     </div>
 </div>
@@ -165,7 +182,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, getDocs, collection, query, where } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, getDocs, collection, query, where, deleteDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBMfrzpvb3YO_O8DOBiIEghmp27UNC7ZL4",
@@ -204,7 +221,7 @@
                 await setDoc(doc(db, 'usernames', e), { displayName: u });
                 showToast('註冊成功！');
             } else { await signInWithEmailAndPassword(auth, e, p); }
-        } catch(err) { alert('失敗：' + err.message); }
+        } catch(err) { alert('失敗：帳號或密碼錯誤'); }
     };
 
     window.handleLogout = () => signOut(auth);
@@ -225,8 +242,8 @@
                 rDoc = await getDoc(doc(db, 'roles', user.email));
             }
             currentRole = rDoc.data().role;
-            const assigned = rDoc.data().class || "";
-
+            
+            // 找出誰是主管理者
             const mSnap = await getDocs(query(collection(db, 'roles'), where('isMainAdmin', '==', true)));
             if(!mSnap.empty){
                 const mData = mSnap.docs[0].data();
@@ -235,8 +252,9 @@
                 mainAdminName = mnd.exists() ? mnd.data().displayName : "管理者";
             } else { mainAdminUID = user.uid; mainAdminName = currentUsername; }
 
-            applyUI(assigned);
+            applyUI(rDoc.data().class || "");
             refreshClassList();
+            refreshMemberList();
             initGrid();
         } else { document.getElementById('auth-overlay').classList.remove('hidden'); }
     });
@@ -249,14 +267,62 @@
         document.getElementById('layout-group').style.display = isAdmin ? 'block' : 'none';
         document.getElementById('shuffle-group').style.display = isAdmin ? 'block' : 'none';
         document.getElementById('btn-new').style.display = isAdmin ? 'block' : 'none';
-        if(isAdmin) document.getElementById('main-admin-info').innerText = `共用「${mainAdminName}」的資料庫`;
-        else document.getElementById('user-sub-info').innerText = `管理班級：${assigned || '未分配'}`;
+        
+        if(isAdmin) document.getElementById('main-admin-info').innerText = `正在與「${mainAdminName}」共用資料庫`;
+        else document.getElementById('user-sub-info').innerText = `負責班級：${assigned || '未指派'}`;
     }
 
+    async function refreshMemberList() {
+        if(currentRole !== 'admin') return;
+        const items = document.getElementById('member-items');
+        items.innerHTML = "載入中...";
+        const snap = await getDocs(collection(db, 'roles'));
+        items.innerHTML = "";
+        snap.forEach(async d => {
+            if(d.id === currentUser.email) return;
+            const uDoc = await getDoc(doc(db, 'usernames', d.id));
+            const name = uDoc.exists() ? uDoc.data().displayName : d.id;
+            const data = d.data();
+            const div = document.createElement('div');
+            div.className = 'admin-item';
+            div.innerHTML = `
+                <span>${name} (${data.role === 'admin' ? '管理者' : '導師'})</span>
+                <button onclick="removeMember('${d.id}')" style="width:auto; padding:2px 8px; background:#fee2e2; color:red; margin:0;">刪除</button>
+            `;
+            items.appendChild(div);
+        });
+    }
+
+    window.removeMember = async (email) => {
+        if(!confirm('確定要移除此成員的權限？')) return;
+        await deleteDoc(doc(db, 'roles', email));
+        showToast('已移除權限');
+        refreshMemberList();
+    }
+
+    window.assignRole = async (roleType) => {
+        const n = document.getElementById('setup-username').value.trim();
+        const c = document.getElementById('setup-class').value;
+        if(!n) return alert('請輸入對象姓名');
+        const e = usernameToEmail(n);
+        
+        // 檢查該用戶是否已註冊
+        const check = await getDoc(doc(db, 'usernames', e));
+        if(!check.exists()) return alert('找不到此用戶，請確認對方是否已經註冊過帳號。');
+
+        await setDoc(doc(db, 'roles', e), { 
+            role: roleType, 
+            class: roleType === 'teacher' ? c : '', 
+            uid: '', 
+            sharedWith: mainAdminUID 
+        }, { merge: true });
+        
+        showToast(`已將 ${n} 設為 ${roleType === 'admin' ? '管理者' : '導師'}`);
+        refreshMemberList();
+    };
+
     window.syncTitle = () => document.getElementById('class-title-display').innerText = document.getElementById('classTitle').value || "請輸入班級名稱";
-
-    window.confirmInit = () => { if(confirm('確定重新佈局？目前位置將清除。')) initGrid(); };
-
+    window.confirmInit = () => { if(confirm('確定重新初始化？這會清空目前所有位置。')) initGrid(); };
     window.initGrid = () => {
         const c = parseInt(document.getElementById('cols').value) || 5, r = parseInt(document.getElementById('rows').value) || 5;
         const grid = document.getElementById('grid');
@@ -271,60 +337,38 @@
         div.draggable = true;
         div.innerHTML = `<span class="student-name">${name}</span>`;
 
-        // 點擊編輯姓名
         div.onclick = () => {
             if(currentRole !== 'admin') return;
             const oldName = div.querySelector('.student-name').innerText;
-            const newName = prompt("請輸入學生姓名（留空則清除）：", oldName);
-            if (newName !== null) {
-                div.querySelector('.student-name').innerText = newName.trim();
-                if(newName.trim() === "") div.classList.remove('is-fixed');
-            }
+            const newName = prompt("學生姓名：", oldName);
+            if (newName !== null) div.querySelector('.student-name').innerText = newName.trim();
         };
 
-        // 右鍵鎖定位置
         div.oncontextmenu = (e) => {
             e.preventDefault();
             if(currentRole !== 'admin') return;
             div.classList.toggle('is-fixed');
-            showToast(div.classList.contains('is-fixed') ? "已鎖定該位置" : "已解除鎖定");
+            showToast(div.classList.contains('is-fixed') ? "位置已鎖定" : "解除鎖定");
         };
 
-        // 拖曳邏輯
         div.ondragstart = (e) => {
             if(currentRole !== 'admin') { e.preventDefault(); return; }
-            draggedElement = div;
-            e.dataTransfer.effectAllowed = "move";
-            div.style.opacity = "0.5";
+            draggedElement = div; e.dataTransfer.effectAllowed = "move"; div.style.opacity = "0.5";
         };
-
-        div.ondragend = () => {
-            draggedElement = null;
-            div.style.opacity = "1";
-            document.querySelectorAll('.seat').forEach(s => s.classList.remove('drag-over'));
-        };
-
+        div.ondragend = () => { draggedElement = null; div.style.opacity = "1"; document.querySelectorAll('.seat').forEach(s => s.classList.remove('drag-over')); };
         div.ondragover = (e) => { e.preventDefault(); div.classList.add('drag-over'); };
         div.ondragleave = () => div.classList.remove('drag-over');
-
         div.ondrop = (e) => {
             e.preventDefault();
             if (draggedElement && draggedElement !== div) {
-                // 交換姓名與固定狀態
-                const targetName = div.querySelector('.student-name').innerText;
-                const targetFixed = div.classList.contains('is-fixed');
-                
+                const tName = div.querySelector('.student-name').innerText;
+                const tFixed = div.classList.contains('is-fixed');
                 div.querySelector('.student-name').innerText = draggedElement.querySelector('.student-name').innerText;
                 if(draggedElement.classList.contains('is-fixed')) div.classList.add('is-fixed'); else div.classList.remove('is-fixed');
-
-                draggedElement.querySelector('.student-name').innerText = targetName;
-                if(targetFixed) draggedElement.classList.add('is-fixed'); else draggedElement.classList.remove('is-fixed');
-                
-                showToast("已交換位置");
+                draggedElement.querySelector('.student-name').innerText = tName;
+                if(tFixed) draggedElement.classList.add('is-fixed'); else draggedElement.classList.remove('is-fixed');
             }
-            div.classList.remove('drag-over');
         };
-
         return div;
     }
 
@@ -340,7 +384,7 @@
 
     window.createNewClass = () => {
         document.getElementById('classTitle').value = ""; document.getElementById('studentList').value = ""; document.getElementById('class-remarks').value = "";
-        syncTitle(); initGrid(); showToast('準備建立新班級');
+        syncTitle(); initGrid(); showToast('已清空，可建立新佈局');
     };
 
     window.saveToCloud = async () => {
@@ -371,17 +415,16 @@
             const grid = document.getElementById('grid');
             grid.style.gridTemplateColumns = `repeat(${data.cols}, 120px)`;
             grid.innerHTML = '';
-            data.seats.forEach(seatData => grid.appendChild(createSeat(seatData.name, seatData.fixed)));
+            data.seats.forEach(sd => grid.appendChild(createSeat(sd.name, sd.fixed)));
         }
     };
 
     window.shuffleNonFixed = () => {
         const students = document.getElementById('studentList').value.split('\n').map(s => s.trim()).filter(s => s);
-        if(!students.length) return alert('請輸入名單');
+        if(!students.length) return alert('請在下方文字方塊輸入學生名單');
         const seats = Array.from(document.querySelectorAll('.seat'));
         const available = seats.filter(s => !s.classList.contains('is-fixed'));
         if(students.length > available.length) return alert('學生人數大於可用位置');
-        
         available.forEach(s => s.querySelector('.student-name').innerText = "");
         const shuffled = [...students].sort(() => Math.random() - 0.5);
         shuffled.forEach((name, i) => available[i].querySelector('.student-name').innerText = name);
@@ -406,15 +449,6 @@
             pdf.addImage(imgData, 'PNG', 10, 10, (canvas.width / 2) * ratio - 20, (canvas.height / 2) * ratio - 20);
             pdf.save(`座位表_${document.getElementById('classTitle').value || '未命名'}.pdf`);
         });
-    };
-
-    window.assignTeacher = async () => {
-        const n = document.getElementById('setup-username').value.trim(), c = document.getElementById('setup-class').value;
-        if(!n || !c) return alert('請填寫完整');
-        const e = usernameToEmail(n);
-        await setDoc(doc(db, 'roles', e), { role: 'teacher', class: c, uid: '' }, { merge: true });
-        await setDoc(doc(db, 'usernames', e), { displayName: n }, { merge: true });
-        showToast(`已指派 ${n} 管理 ${c}`);
     };
 </script>
 </body>
