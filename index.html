@@ -60,10 +60,20 @@
         .btn-row { display: flex; gap: 8px; }
 
         .main-content { flex-grow: 1; display: flex; align-items: flex-start; justify-content: center; overflow: auto; padding: 40px; }
-        #capture-area { background: white; padding: 50px; border-radius: 20px; box-shadow: 0 8px 40px rgba(0,0,0,0.06); min-width: fit-content; position: relative; }
-        #class-title-display { text-align: center; font-size: 2.5rem; margin: 0 0 36px 0; font-weight: 900; }
+        #capture-area { 
+            background: white; 
+            padding: 60px 50px; 
+            border-radius: 4px; 
+            box-shadow: 0 8px 40px rgba(0,0,0,0.06); 
+            width: 794px; /* A4 寬度基準 */
+            min-height: 1123px; /* A4 高度基準 */
+            position: relative; 
+            display: flex;
+            flex-direction: column;
+        }
+        #class-title-display { text-align: center; font-size: 2.8rem; margin: 0 0 40px 0; font-weight: 900; letter-spacing: 2px; }
 
-        .grid { display: grid; gap: 14px; justify-content: center; }
+        .grid { display: grid; gap: 14px; justify-content: center; margin-bottom: 40px; }
         .seat {
             width: 120px; height: 86px; border: 2px solid var(--border); border-radius: 10px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -73,6 +83,9 @@
         .seat.is-fixed { background: var(--fixed); border-color: var(--fixed-border); }
         .seat.drag-over { border: 2px dashed var(--primary); background: #eff6ff; }
         .student-name { font-size: 1.1rem; font-weight: 700; pointer-events: none; text-align: center; word-break: break-all; padding: 0 5px; }
+
+        .remarks-container { margin-top: auto; border-top: 2px solid var(--text); padding-top: 20px; }
+        .remarks-title { font-weight: 800; font-size: 1.2rem; margin-bottom: 10px; display: block; }
 
         #auth-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.95); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(10px); }
         #auth-overlay.hidden { display: none; }
@@ -139,8 +152,8 @@
                 <button class="btn-cloud" onclick="saveToCloud()">☁️ 儲存雲端</button>
             </div>
             <div class="btn-row" style="margin-top:8px;">
-                <button class="btn-img" onclick="downloadImage()">🖼️ 匯出圖片</button>
-                <button class="btn-pdf" onclick="downloadPDF()">📄 匯出 PDF</button>
+                <button class="btn-img" onclick="downloadImage()">🖼️ 匯出圖片 (A4直向)</button>
+                <button class="btn-pdf" onclick="downloadPDF()">📄 匯出 PDF (A4直向)</button>
             </div>
         </div>
 
@@ -149,8 +162,8 @@
             <label>班級名稱</label>
             <input type="text" id="classTitle" oninput="syncTitle()" placeholder="例如：113學測座位">
             <div style="display:flex;gap:10px;">
-                <div style="flex:1;"><label>欄</label><input type="number" id="cols" value="5"></div>
-                <div style="flex:1;"><label>列</label><input type="number" id="rows" value="5"></div>
+                <div style="flex:1;"><label>欄 (直列)</label><input type="number" id="cols" value="5"></div>
+                <div style="flex:1;"><label>列 (橫排)</label><input type="number" id="rows" value="5"></div>
             </div>
             <button class="btn-init" onclick="confirmInit()">🔄 重新初始化佈局</button>
         </div>
@@ -171,9 +184,9 @@
     <div id="capture-area">
         <h1 id="class-title-display">請輸入班級名稱</h1>
         <div id="grid" class="grid"></div>
-        <div style="margin-top:30px;">
-            <label>📝 備註事項</label>
-            <textarea id="class-remarks" style="width:100%; height:80px; border:1px dashed #ccc; padding:10px;" placeholder="可在這裡輸入考試說明或備註..."></textarea>
+        <div class="remarks-container">
+            <label class="remarks-title">📝 備註事項 / 考試說明</label>
+            <textarea id="class-remarks" style="width:100%; height:120px; border:1px dashed #ccc; padding:15px; font-size:1rem; line-height:1.6;" placeholder="可在這裡輸入考試說明、監考老師或注意事項..."></textarea>
         </div>
     </div>
 </div>
@@ -272,8 +285,6 @@
         document.getElementById('role-badge').className = "role-badge " + (isAdmin ? "admin" : "teacher");
         document.getElementById('admin-setup-panel').style.display = isAdmin ? 'block' : 'none';
         document.getElementById('layout-group').style.display = isAdmin ? 'block' : 'none';
-        
-        // 隨機排列區域：導師現在也可以用，不隱藏
         document.getElementById('shuffle-group').style.display = 'block';
         document.getElementById('btn-new').style.display = isAdmin ? 'block' : 'none';
         
@@ -344,7 +355,11 @@
         refreshMemberList();
     };
 
-    window.syncTitle = () => document.getElementById('class-title-display').innerText = document.getElementById('classTitle').value || "請輸入班級名稱";
+    window.syncTitle = () => {
+        const titleText = document.getElementById('classTitle').value;
+        document.getElementById('class-title-display').innerText = titleText ? `${titleText} 考試座位表` : "請輸入班級名稱";
+    }
+
     window.confirmInit = () => { if(confirm('確定重新初始化？這會清空目前所有位置。')) initGrid(); };
     window.initGrid = () => {
         const c = parseInt(document.getElementById('cols').value) || 5, r = parseInt(document.getElementById('rows').value) || 5;
@@ -360,7 +375,6 @@
         div.draggable = true;
         div.innerHTML = `<span class="student-name">${name}</span>`;
 
-        // 開放權限給導師：導師現在可以編輯自己負責的班級
         div.onclick = () => {
             const oldName = div.querySelector('.student-name').innerText;
             const newName = prompt("學生姓名：", oldName);
@@ -412,7 +426,6 @@
         const title = document.getElementById('classTitle').value.trim();
         if(!title) return alert('請輸入班級名稱');
         
-        // 導師權限檢查：如果是導師，只能儲存自己負責的班級
         if(currentRole === 'teacher' && title !== assignedClass) {
             return alert(`權限不足！您只能儲存與指派給您的班級「${assignedClass}」名稱相符的資料。`);
         }
@@ -434,7 +447,6 @@
         const s = document.getElementById('classDropdown').value;
         if(!s) return;
 
-        // 導師權限檢查：不能看別班的座位
         if(currentRole === 'teacher' && s !== assignedClass) {
             return alert(`權限不足！您被指派負責的班級是「${assignedClass}」，無法查看其他班級資料。`);
         }
@@ -468,21 +480,39 @@
     };
 
     window.downloadImage = () => {
-        html2canvas(document.getElementById('capture-area')).then(canvas => {
+        html2canvas(document.getElementById('capture-area'), { scale: 2 }).then(canvas => {
             const link = document.createElement('a');
             link.download = `座位表_${document.getElementById('classTitle').value || '未命名'}.png`;
-            link.href = canvas.toDataURL(); link.click();
+            link.href = canvas.toDataURL('image/png'); link.click();
         });
     };
 
     window.downloadPDF = () => {
-        html2canvas(document.getElementById('capture-area'), { scale: 2 }).then(canvas => {
+        const area = document.getElementById('capture-area');
+        html2canvas(area, { scale: 3 }).then(canvas => {
             const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF('l', 'mm', 'a4');
+            // 設定為 'p' (Portrait 直向), 'mm', 'a4'
+            const pdf = new jsPDF('p', 'mm', 'a4');
             const imgData = canvas.toDataURL('image/png');
-            const pw = pdf.internal.pageSize.getWidth(), ph = pdf.internal.pageSize.getHeight();
-            const ratio = Math.min(pw / (canvas.width / 2), ph / (canvas.height / 2));
-            pdf.addImage(imgData, 'PNG', 10, 10, (canvas.width / 2) * ratio - 20, (canvas.height / 2) * ratio - 20);
+            
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            
+            // 計算圖片縮放比例，使其填滿寬度並保持 A4 比例
+            const imgProps = pdf.getImageProperties(imgData);
+            const ratio = pdfWidth / imgProps.width;
+            const finalImgHeight = imgProps.height * ratio;
+
+            // 如果高度超出 A4，則縮小比例
+            let finalRatio = ratio;
+            if (finalImgHeight > pdfHeight) {
+                finalRatio = pdfHeight / imgProps.height;
+            }
+
+            const xOffset = (pdfWidth - (imgProps.width * finalRatio)) / 2;
+            const yOffset = 0; // 從最頂端開始
+
+            pdf.addImage(imgData, 'PNG', xOffset, yOffset, imgProps.width * finalRatio, imgProps.height * finalRatio);
             pdf.save(`座位表_${document.getElementById('classTitle').value || '未命名'}.pdf`);
         });
     };
