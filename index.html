@@ -18,174 +18,66 @@
             --border: #e2e8f0;
             --admin-accent: #2563eb;
             --teacher-accent: #7c3aed;
-            --notif-bg: #fef3c7; --notif-border: #f59e0b;
             --sidebar-w: 340px;
         }
 
         * { box-sizing: border-box; }
-
         body {
-            font-family: 'Noto Sans TC', "Microsoft JhengHei", sans-serif;
+            font-family: 'Noto Sans TC', sans-serif;
             background: var(--bg);
-            margin: 0;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-            color: var(--text);
+            margin: 0; display: flex; height: 100vh; overflow: hidden; color: var(--text);
         }
 
         .sidebar {
-            width: var(--sidebar-w);
-            background: var(--surface);
-            padding: 0;
+            width: var(--sidebar-w); background: var(--surface);
             box-shadow: 4px 0 20px rgba(0,0,0,0.06);
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            flex-shrink: 0;
+            overflow-y: auto; display: flex; flex-direction: column; flex-shrink: 0;
         }
 
-        .sidebar-header {
-            padding: 24px 20px 16px;
-            border-bottom: 1px solid var(--border);
-            position: sticky; top: 0;
-            background: var(--surface);
-            z-index: 10;
-        }
-
-        .role-badge {
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 4px 12px; border-radius: 20px;
-            font-size: 13px; font-weight: 700; letter-spacing: 0.5px;
-            margin-bottom: 12px;
-        }
+        .sidebar-header { padding: 24px 20px 16px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface); z-index: 10; }
+        .role-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 700; margin-bottom: 12px; }
         .role-badge.admin { background: #dbeafe; color: var(--admin-accent); }
         .role-badge.teacher { background: #ede9fe; color: var(--teacher-accent); }
-
-        .user-display-name {
-            font-size: 18px; font-weight: 700; color: var(--text);
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            margin-bottom: 2px;
-        }
-        .user-sub-info {
-            font-size: 12px; color: var(--text-muted);
-        }
+        .user-display-name { font-size: 18px; font-weight: 700; }
 
         .sidebar-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 14px; }
+        .config-group { background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+        .config-group h3 { margin: 0 0 14px 0; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
 
-        .config-group {
-            background: #f8fafc;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px;
-        }
+        label { font-size: 13px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px; }
+        input, textarea, select { width: 100%; padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; margin-bottom: 10px; }
 
-        .config-group h3 {
-            margin: 0 0 14px 0;
-            font-size: 14px; font-weight: 700; color: var(--text);
-            display: flex; align-items: center; gap: 8px;
-            text-transform: uppercase; letter-spacing: 0.5px;
-        }
-
-        label { font-size: 13px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 6px; }
-
-        input[type="text"], input[type="number"], input[type="password"], textarea, select {
-            width: 100%; padding: 10px 12px;
-            border: 1.5px solid var(--border);
-            border-radius: 8px; font-size: 14px;
-            background: white; color: var(--text);
-            font-family: inherit;
-            transition: border-color 0.2s;
-            margin-bottom: 10px;
-        }
-        input:focus, textarea:focus, select:focus {
-            outline: none; border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
-        }
-
-        button {
-            width: 100%; padding: 11px 14px;
-            margin-bottom: 8px; border: none;
-            border-radius: 8px; cursor: pointer;
-            font-weight: 700; transition: all 0.15s;
-            font-size: 14px; font-family: inherit;
-            display: flex; align-items: center; justify-content: center; gap: 7px;
-        }
-        button:hover { filter: brightness(1.06); transform: translateY(-1px); }
-        button:disabled { opacity: 0.4; cursor: not-allowed; }
-
-        .btn-new    { background: #fee2e2; color: #b91c1c; }
-        .btn-cloud  { background: #dbeafe; color: var(--primary-dark); }
-        .btn-load   { background: #d1fae5; color: #065f46; }
-        .btn-init   { background: var(--text); color: white; }
-        .btn-shuffle{ background: var(--primary); color: white; font-size: 15px; }
-        .btn-img    { background: #fef3c7; color: #92400e; }
-        .btn-pdf    { background: #fee2e2; color: #b91c1c; }
-        .btn-out    { background: #f1f5f9; color: var(--text-muted); }
-
+        button { width: 100%; padding: 11px; margin-bottom: 8px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 7px; }
+        .btn-new { background: #fee2e2; color: #b91c1c; }
+        .btn-cloud { background: #dbeafe; color: var(--primary-dark); }
+        .btn-load { background: #d1fae5; color: #065f46; }
+        .btn-init { background: var(--text); color: white; }
+        .btn-shuffle { background: var(--primary); color: white; }
+        .btn-img { background: #fef3c7; color: #92400e; }
+        .btn-pdf { background: #fee2e2; color: #b91c1c; }
+        .btn-out { background: #f1f5f9; color: var(--text-muted); }
         .btn-row { display: flex; gap: 8px; }
-        .btn-row button { margin-bottom: 0; }
 
-        #notif-panel {
-            background: var(--notif-bg);
-            border: 1.5px solid var(--notif-border);
-            border-radius: 12px; padding: 14px;
-            display: none;
-        }
-        #notif-panel.visible { display: block; }
-
-        .main-content {
-            flex-grow: 1; display: flex;
-            align-items: flex-start; justify-content: center;
-            overflow: auto; padding: 40px;
-        }
-
-        #capture-area {
-            background: white; padding: 50px;
-            border-radius: 20px; box-shadow: 0 8px 40px rgba(0,0,0,0.06);
-            min-width: fit-content; margin: auto; position: relative;
-        }
-
-        #class-title-display {
-            text-align: center; font-size: 2.5rem;
-            margin: 0 0 36px 0; color: var(--text);
-            font-weight: 900;
-        }
+        .main-content { flex-grow: 1; display: flex; align-items: flex-start; justify-content: center; overflow: auto; padding: 40px; }
+        #capture-area { background: white; padding: 50px; border-radius: 20px; box-shadow: 0 8px 40px rgba(0,0,0,0.06); min-width: fit-content; position: relative; }
+        #class-title-display { text-align: center; font-size: 2.5rem; margin: 0 0 36px 0; font-weight: 900; }
 
         .grid { display: grid; gap: 14px; justify-content: center; }
-
         .seat {
-            width: 120px; height: 86px;
-            border: 2px solid var(--border);
-            border-radius: 10px; display: flex;
-            flex-direction: column; align-items: center;
-            justify-content: center; background: #fff;
-            cursor: pointer; position: relative;
-            transition: all 0.18s ease;
-            user-select: none;
+            width: 120px; height: 86px; border: 2px solid var(--border); border-radius: 10px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: #fff; cursor: grab; position: relative; transition: 0.2s; user-select: none;
         }
+        .seat:active { cursor: grabbing; transform: scale(1.05); z-index: 5; }
         .seat.is-fixed { background: var(--fixed); border-color: var(--fixed-border); }
-        .student-name { font-size: 1.2rem; font-weight: 700; pointer-events: none; }
+        .seat.drag-over { border: 2px dashed var(--primary); background: #eff6ff; }
+        .student-name { font-size: 1.1rem; font-weight: 700; pointer-events: none; text-align: center; word-break: break-all; padding: 0 5px; }
 
-        /* ════ 認證介面 ════ */
-        #auth-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15,23,42,0.95);
-            display: flex; justify-content: center; align-items: center;
-            z-index: 1000; backdrop-filter: blur(10px);
-        }
+        #auth-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.95); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(10px); }
         #auth-overlay.hidden { display: none; }
-        .auth-box {
-            background: white; padding: 40px;
-            border-radius: 20px; width: 400px;
-            text-align: center;
-        }
+        .auth-box { background: white; padding: 40px; border-radius: 20px; width: 400px; text-align: center; }
 
-        #toast {
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-            background: #1e293b; color: white; padding: 12px 24px;
-            border-radius: 10px; font-size: 14px; opacity: 0; transition: 0.3s; z-index: 9999;
-        }
+        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 12px 24px; border-radius: 10px; opacity: 0; transition: 0.3s; z-index: 9999; }
         #toast.show { opacity: 1; }
     </style>
 </head>
@@ -197,7 +89,7 @@
         <div style="text-align:left; margin-top:20px;">
             <label>中文姓名 / 帳號</label>
             <input type="text" id="auth-username" placeholder="請輸入中文姓名">
-            <label>密碼 (英數文字)</label>
+            <label>密碼</label>
             <input type="password" id="auth-password" placeholder="請輸入密碼">
         </div>
         <button class="btn-init" style="background:var(--primary); margin-top:10px;" id="btn-auth-action" onclick="handleAuth()">🔐 登入系統</button>
@@ -209,15 +101,10 @@
     <div class="sidebar-header">
         <div class="role-badge" id="role-badge">⏳ 讀取中</div>
         <div class="user-display-name" id="user-display-name">讀取中...</div>
-        <div class="user-sub-info" id="user-sub-info"></div>
+        <div class="user-sub-info" id="user-sub-info" style="font-size:12px; color:var(--text-muted);"></div>
     </div>
 
     <div class="sidebar-body">
-        <div id="notif-panel">
-            <h3 style="margin:0 0 10px 0;">🔔 調整通知 <span id="notif-count">0</span></h3>
-            <button onclick="clearNotifications()" style="font-size:12px; padding:5px;">標為已讀</button>
-        </div>
-
         <div id="admin-setup-panel" class="config-group" style="display:none; background:#f5f3ff;">
             <h3>👤 管理權限</h3>
             <div id="main-admin-info" style="font-size:12px; color:var(--purple); margin-bottom:10px;"></div>
@@ -228,7 +115,7 @@
 
         <div class="config-group">
             <h3>🗂️ 班級管理</h3>
-            <button class="btn-new" onclick="createNewClass()">➕ 建立新班級</button>
+            <button class="btn-new" id="btn-new" onclick="createNewClass()">➕ 建立新班級</button>
             <select id="classDropdown"><option value="">-- 選擇班級 --</option></select>
             <div class="btn-row">
                 <button class="btn-load" onclick="loadFromDropdown()">📂 載入</button>
@@ -243,7 +130,7 @@
         <div class="config-group" id="layout-group">
             <h3>✏️ 教室配置</h3>
             <label>班級名稱</label>
-            <input type="text" id="classTitle" oninput="syncTitle()" placeholder="例如：資二甲">
+            <input type="text" id="classTitle" oninput="syncTitle()" placeholder="例如：資三乙">
             <div style="display:flex;gap:10px;">
                 <div style="flex:1;"><label>欄</label><input type="number" id="cols" value="5"></div>
                 <div style="flex:1;"><label>列</label><input type="number" id="rows" value="5"></div>
@@ -255,6 +142,7 @@
             <h3>🎲 隨機抽籤</h3>
             <textarea id="studentList" placeholder="每行輸入一個姓名..." style="height:100px;"></textarea>
             <button class="btn-shuffle" onclick="shuffleNonFixed()">🎲 開始抽籤</button>
+            <p style="font-size:11px; color:var(--text-muted); margin-top:5px;">※ 點擊座位可手動編輯姓名，長按拖曳可交換位置。</p>
         </div>
 
         <button class="btn-out" onclick="handleLogout()">🚪 登出系統</button>
@@ -277,7 +165,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, getDocs, deleteDoc, collection, query, where, orderBy, updateDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, getDocs, collection, query, where } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBMfrzpvb3YO_O8DOBiIEghmp27UNC7ZL4",
@@ -292,23 +180,11 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    function usernameToEmail(username) {
-        const clean = username.trim();
-        return clean ? `${clean}@school.local` : null;
-    }
+    let currentUser = null, currentRole = null, currentUsername = "", mainAdminUID = null, mainAdminName = "", isRegisterMode = false;
+    let draggedElement = null;
 
-    let currentUser = null;
-    let currentRole = null;
-    let currentUsername = "";
-    let mainAdminUID = null;
-    let mainAdminName = "";
-    let isRegisterMode = false;
-
-    function showToast(msg) {
-        const t = document.getElementById('toast');
-        t.textContent = msg; t.classList.add('show');
-        setTimeout(() => t.classList.remove('show'), 2500);
-    }
+    const usernameToEmail = (u) => u.trim() ? `${u.trim()}@school.local` : null;
+    const showToast = (m) => { const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2500); };
 
     window.toggleAuthMode = () => {
         isRegisterMode = !isRegisterMode;
@@ -318,19 +194,17 @@
     };
 
     window.handleAuth = async () => {
-        const userIn = document.getElementById('auth-username').value.trim();
-        const passIn = document.getElementById('auth-password').value;
-        if(!userIn || !passIn) return alert('請完整輸入帳號與密碼');
-        const email = usernameToEmail(userIn);
+        const u = document.getElementById('auth-username').value.trim();
+        const p = document.getElementById('auth-password').value;
+        if(!u || !p) return alert('請完整輸入');
+        const e = usernameToEmail(u);
         try {
             if(isRegisterMode) {
-                await createUserWithEmailAndPassword(auth, email, passIn);
-                await setDoc(doc(db, 'usernames', email), { displayName: userIn });
+                await createUserWithEmailAndPassword(auth, e, p);
+                await setDoc(doc(db, 'usernames', e), { displayName: u });
                 showToast('註冊成功！');
-            } else {
-                await signInWithEmailAndPassword(auth, email, passIn);
-            }
-        } catch(e) { alert('操作失敗：' + e.message); }
+            } else { await signInWithEmailAndPassword(auth, e, p); }
+        } catch(err) { alert('失敗：' + err.message); }
     };
 
     window.handleLogout = () => signOut(auth);
@@ -343,63 +217,48 @@
             currentUsername = nameDoc.exists() ? nameDoc.data().displayName : user.email.split('@')[0];
             document.getElementById('user-display-name').innerText = currentUsername;
 
-            let roleDoc = await getDoc(doc(db, 'roles', user.email));
-            if(!roleDoc.exists()){
-                const allRoles = await getDocs(collection(db, 'roles'));
-                if(allRoles.empty){
-                    await setDoc(doc(db, 'roles', user.email), { role: 'admin', isMainAdmin: true, uid: user.uid });
-                } else {
-                    await setDoc(doc(db, 'roles', user.email), { role: 'teacher', uid: user.uid, class: '' });
-                }
-                roleDoc = await getDoc(doc(db, 'roles', user.email));
+            let rDoc = await getDoc(doc(db, 'roles', user.email));
+            if(!rDoc.exists()){
+                const all = await getDocs(collection(db, 'roles'));
+                if(all.empty) await setDoc(doc(db, 'roles', user.email), { role: 'admin', isMainAdmin: true, uid: user.uid });
+                else await setDoc(doc(db, 'roles', user.email), { role: 'teacher', uid: user.uid, class: '' });
+                rDoc = await getDoc(doc(db, 'roles', user.email));
             }
-            
-            currentRole = roleDoc.data().role;
-            const assignedClass = roleDoc.data().class || "";
+            currentRole = rDoc.data().role;
+            const assigned = rDoc.data().class || "";
 
-            const mainSnap = await getDocs(query(collection(db, 'roles'), where('isMainAdmin', '==', true)));
-            if(!mainSnap.empty){
-                const mainData = mainSnap.docs[0].data();
-                mainAdminUID = mainData.uid;
-                const mnd = await getDoc(doc(db, 'usernames', mainSnap.docs[0].id));
+            const mSnap = await getDocs(query(collection(db, 'roles'), where('isMainAdmin', '==', true)));
+            if(!mSnap.empty){
+                const mData = mSnap.docs[0].data();
+                mainAdminUID = mData.uid;
+                const mnd = await getDoc(doc(db, 'usernames', mSnap.docs[0].id));
                 mainAdminName = mnd.exists() ? mnd.data().displayName : "管理者";
-            } else {
-                mainAdminUID = user.uid; mainAdminName = currentUsername;
-            }
+            } else { mainAdminUID = user.uid; mainAdminName = currentUsername; }
 
-            applyUI(assignedClass);
+            applyUI(assigned);
             refreshClassList();
             initGrid();
-        } else {
-            document.getElementById('auth-overlay').classList.remove('hidden');
-        }
+        } else { document.getElementById('auth-overlay').classList.remove('hidden'); }
     });
 
-    function applyUI(assignedClass) {
+    function applyUI(assigned) {
         const isAdmin = currentRole === 'admin';
-        const badge = document.getElementById('role-badge');
-        badge.innerText = isAdmin ? "🛡️ 管理者" : "👨‍🏫 導師";
-        badge.className = "role-badge " + (isAdmin ? "admin" : "teacher");
+        document.getElementById('role-badge').innerText = isAdmin ? "🛡️ 管理者" : "👨‍🏫 導師";
+        document.getElementById('role-badge').className = "role-badge " + (isAdmin ? "admin" : "teacher");
         document.getElementById('admin-setup-panel').style.display = isAdmin ? 'block' : 'none';
         document.getElementById('layout-group').style.display = isAdmin ? 'block' : 'none';
         document.getElementById('shuffle-group').style.display = isAdmin ? 'block' : 'none';
         document.getElementById('btn-new').style.display = isAdmin ? 'block' : 'none';
-        if(isAdmin) document.getElementById('main-admin-info').innerText = `目前共用「${mainAdminName}」的資料庫`;
-        else document.getElementById('user-sub-info').innerText = `管理班級：${assignedClass || '未分配'}`;
+        if(isAdmin) document.getElementById('main-admin-info').innerText = `共用「${mainAdminName}」的資料庫`;
+        else document.getElementById('user-sub-info').innerText = `管理班級：${assigned || '未分配'}`;
     }
 
-    window.syncTitle = () => {
-        document.getElementById('class-title-display').innerText = document.getElementById('classTitle').value || "請輸入班級名稱";
-    };
+    window.syncTitle = () => document.getElementById('class-title-display').innerText = document.getElementById('classTitle').value || "請輸入班級名稱";
 
-    window.confirmInit = () => {
-        if(!confirm('確定要重新佈局嗎？這將會清除目前的座位安排。')) return;
-        initGrid();
-    };
+    window.confirmInit = () => { if(confirm('確定重新佈局？目前位置將清除。')) initGrid(); };
 
     window.initGrid = () => {
-        const c = parseInt(document.getElementById('cols').value) || 5;
-        const r = parseInt(document.getElementById('rows').value) || 5;
+        const c = parseInt(document.getElementById('cols').value) || 5, r = parseInt(document.getElementById('rows').value) || 5;
         const grid = document.getElementById('grid');
         grid.style.gridTemplateColumns = `repeat(${c}, 120px)`;
         grid.innerHTML = '';
@@ -409,35 +268,79 @@
     function createSeat(name, fixed) {
         const div = document.createElement('div');
         div.className = 'seat' + (fixed ? ' is-fixed' : '');
+        div.draggable = true;
         div.innerHTML = `<span class="student-name">${name}</span>`;
+
+        // 點擊編輯姓名
         div.onclick = () => {
             if(currentRole !== 'admin') return;
-            div.classList.toggle('is-fixed');
+            const oldName = div.querySelector('.student-name').innerText;
+            const newName = prompt("請輸入學生姓名（留空則清除）：", oldName);
+            if (newName !== null) {
+                div.querySelector('.student-name').innerText = newName.trim();
+                if(newName.trim() === "") div.classList.remove('is-fixed');
+            }
         };
+
+        // 右鍵鎖定位置
+        div.oncontextmenu = (e) => {
+            e.preventDefault();
+            if(currentRole !== 'admin') return;
+            div.classList.toggle('is-fixed');
+            showToast(div.classList.contains('is-fixed') ? "已鎖定該位置" : "已解除鎖定");
+        };
+
+        // 拖曳邏輯
+        div.ondragstart = (e) => {
+            if(currentRole !== 'admin') { e.preventDefault(); return; }
+            draggedElement = div;
+            e.dataTransfer.effectAllowed = "move";
+            div.style.opacity = "0.5";
+        };
+
+        div.ondragend = () => {
+            draggedElement = null;
+            div.style.opacity = "1";
+            document.querySelectorAll('.seat').forEach(s => s.classList.remove('drag-over'));
+        };
+
+        div.ondragover = (e) => { e.preventDefault(); div.classList.add('drag-over'); };
+        div.ondragleave = () => div.classList.remove('drag-over');
+
+        div.ondrop = (e) => {
+            e.preventDefault();
+            if (draggedElement && draggedElement !== div) {
+                // 交換姓名與固定狀態
+                const targetName = div.querySelector('.student-name').innerText;
+                const targetFixed = div.classList.contains('is-fixed');
+                
+                div.querySelector('.student-name').innerText = draggedElement.querySelector('.student-name').innerText;
+                if(draggedElement.classList.contains('is-fixed')) div.classList.add('is-fixed'); else div.classList.remove('is-fixed');
+
+                draggedElement.querySelector('.student-name').innerText = targetName;
+                if(targetFixed) draggedElement.classList.add('is-fixed'); else draggedElement.classList.remove('is-fixed');
+                
+                showToast("已交換位置");
+            }
+            div.classList.remove('drag-over');
+        };
+
         return div;
     }
 
     async function refreshClassList() {
-        const drop = document.getElementById('classDropdown');
-        const setupDrop = document.getElementById('setup-class');
-        drop.innerHTML = '<option value="">-- 選擇班級 --</option>';
-        setupDrop.innerHTML = '<option value="">選擇班級</option>';
+        const drop = document.getElementById('classDropdown'), sDrop = document.getElementById('setup-class');
+        drop.innerHTML = '<option value="">-- 選擇班級 --</option>'; sDrop.innerHTML = '<option value="">選擇班級</option>';
         const snap = await getDocs(collection(db, 'users', mainAdminUID, 'classes'));
         snap.forEach(d => {
-            const opt = document.createElement('option');
-            opt.value = d.id; opt.innerText = d.id;
-            drop.appendChild(opt);
-            setupDrop.appendChild(opt.cloneNode(true));
+            const opt = document.createElement('option'); opt.value = d.id; opt.innerText = d.id;
+            drop.appendChild(opt); sDrop.appendChild(opt.cloneNode(true));
         });
     }
 
     window.createNewClass = () => {
-        document.getElementById('classTitle').value = "";
-        document.getElementById('studentList').value = "";
-        document.getElementById('class-remarks').value = "";
-        syncTitle();
-        initGrid();
-        showToast('已準備好建立新班級');
+        document.getElementById('classTitle').value = ""; document.getElementById('studentList').value = ""; document.getElementById('class-remarks').value = "";
+        syncTitle(); initGrid(); showToast('準備建立新班級');
     };
 
     window.saveToCloud = async () => {
@@ -448,22 +351,19 @@
             fixed: s.classList.contains('is-fixed')
         }));
         await setDoc(doc(db, 'users', mainAdminUID, 'classes', title), {
-            cols: document.getElementById('cols').value,
-            rows: document.getElementById('rows').value,
-            remarks: document.getElementById('class-remarks').value,
-            seats, editor: currentUsername
+            cols: document.getElementById('cols').value, rows: document.getElementById('rows').value,
+            remarks: document.getElementById('class-remarks').value, seats, editor: currentUsername
         });
-        showToast('✅ 儲存成功');
-        refreshClassList();
+        showToast('✅ 儲存成功'); refreshClassList();
     };
 
     window.loadFromDropdown = async () => {
-        const selected = document.getElementById('classDropdown').value;
-        if(!selected) return;
-        const d = await getDoc(doc(db, 'users', mainAdminUID, 'classes', selected));
+        const s = document.getElementById('classDropdown').value;
+        if(!s) return;
+        const d = await getDoc(doc(db, 'users', mainAdminUID, 'classes', s));
         if(d.exists()){
             const data = d.data();
-            document.getElementById('classTitle').value = selected;
+            document.getElementById('classTitle').value = s;
             document.getElementById('cols').value = data.cols;
             document.getElementById('rows').value = data.rows;
             document.getElementById('class-remarks').value = data.remarks || "";
@@ -471,22 +371,20 @@
             const grid = document.getElementById('grid');
             grid.style.gridTemplateColumns = `repeat(${data.cols}, 120px)`;
             grid.innerHTML = '';
-            data.seats.forEach(s => grid.appendChild(createSeat(s.name, s.fixed)));
+            data.seats.forEach(seatData => grid.appendChild(createSeat(seatData.name, seatData.fixed)));
         }
     };
 
     window.shuffleNonFixed = () => {
         const students = document.getElementById('studentList').value.split('\n').map(s => s.trim()).filter(s => s);
-        if(!students.length) return alert('請輸入學生名單');
+        if(!students.length) return alert('請輸入名單');
         const seats = Array.from(document.querySelectorAll('.seat'));
-        const nonFixedSeats = seats.filter(s => !s.classList.contains('is-fixed'));
-        if(students.length > nonFixedSeats.length) return alert('學生人數大於可用位置數');
+        const available = seats.filter(s => !s.classList.contains('is-fixed'));
+        if(students.length > available.length) return alert('學生人數大於可用位置');
         
-        nonFixedSeats.forEach(s => s.querySelector('.student-name').innerText = "");
+        available.forEach(s => s.querySelector('.student-name').innerText = "");
         const shuffled = [...students].sort(() => Math.random() - 0.5);
-        shuffled.forEach((name, i) => {
-            nonFixedSeats[i].querySelector('.student-name').innerText = name;
-        });
+        shuffled.forEach((name, i) => available[i].querySelector('.student-name').innerText = name);
         showToast('🎲 隨機排列完成');
     };
 
@@ -494,8 +392,7 @@
         html2canvas(document.getElementById('capture-area')).then(canvas => {
             const link = document.createElement('a');
             link.download = `座位表_${document.getElementById('classTitle').value || '未命名'}.png`;
-            link.href = canvas.toDataURL();
-            link.click();
+            link.href = canvas.toDataURL(); link.click();
         });
     };
 
@@ -504,22 +401,20 @@
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('l', 'mm', 'a4');
             const imgData = canvas.toDataURL('image/png');
-            const pageWidth = pdf.internal.pageSize.getWidth();
-            const pageHeight = pdf.internal.pageSize.getHeight();
-            const ratio = Math.min(pageWidth / (canvas.width / 2), pageHeight / (canvas.height / 2));
+            const pw = pdf.internal.pageSize.getWidth(), ph = pdf.internal.pageSize.getHeight();
+            const ratio = Math.min(pw / (canvas.width / 2), ph / (canvas.height / 2));
             pdf.addImage(imgData, 'PNG', 10, 10, (canvas.width / 2) * ratio - 20, (canvas.height / 2) * ratio - 20);
             pdf.save(`座位表_${document.getElementById('classTitle').value || '未命名'}.pdf`);
         });
     };
 
     window.assignTeacher = async () => {
-        const name = document.getElementById('setup-username').value.trim();
-        const cls = document.getElementById('setup-class').value;
-        if(!name || !cls) return alert('請填寫完整');
-        const email = usernameToEmail(name);
-        await setDoc(doc(db, 'roles', email), { role: 'teacher', class: cls, uid: '' }, { merge: true });
-        await setDoc(doc(db, 'usernames', email), { displayName: name }, { merge: true });
-        showToast(`已指派 ${name} 管理 ${cls}`);
+        const n = document.getElementById('setup-username').value.trim(), c = document.getElementById('setup-class').value;
+        if(!n || !c) return alert('請填寫完整');
+        const e = usernameToEmail(n);
+        await setDoc(doc(db, 'roles', e), { role: 'teacher', class: c, uid: '' }, { merge: true });
+        await setDoc(doc(db, 'usernames', e), { displayName: n }, { merge: true });
+        showToast(`已指派 ${n} 管理 ${c}`);
     };
 </script>
 </body>
