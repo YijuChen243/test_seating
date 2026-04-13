@@ -113,8 +113,8 @@
             <h3>🛡️ 權限與協作管理</h3>
             <div id="main-admin-info" style="font-size:11px; color:var(--purple); margin-bottom:10px; line-height:1.4;"></div>
             
-            <label>對象姓名 (須已註冊)</label>
-            <input type="text" id="setup-username" placeholder="輸入對方註冊時的姓名">
+            <label>選擇對象 (僅顯示已註冊成員)</label>
+            <select id="setup-username-select"><option value="">載入中...</option></select>
             
             <div class="btn-row">
                 <button onclick="assignRole('admin')" class="btn-init" style="background:var(--purple); font-size:12px;">🔝 升級管理者</button>
@@ -156,10 +156,11 @@
         </div>
 
         <div class="config-group" id="shuffle-group">
-            <h3>🎲 隨機排列 (管理者)</h3>
+            <h3>🎲 隨機排列名單</h3>
+            <label>學生姓名名單 (每行一位)</label>
             <textarea id="studentList" placeholder="每行輸入一個姓名..." style="height:100px;"></textarea>
             <button class="btn-shuffle" onclick="shuffleNonFixed()">🎲 隨機排位</button>
-            <p style="font-size:11px; color:var(--text-muted); margin-top:5px;">※ 點擊座位手動編輯，拖曳可交換，右鍵可鎖定位置。</p>
+            <p style="font-size:11px; color:var(--text-muted); margin-top:5px;">※ 點擊座位可手動編輯，拖曳交換，右鍵鎖定位置。</p>
         </div>
 
         <button class="btn-out" onclick="handleLogout()">🚪 登出系統</button>
@@ -197,7 +198,7 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    let currentUser = null, currentRole = null, currentUsername = "", mainAdminUID = null, mainAdminName = "", isRegisterMode = false;
+    let currentUser = null, currentRole = null, currentUsername = "", assignedClass = "", mainAdminUID = null, mainAdminName = "", isRegisterMode = false;
     let draggedElement = null;
 
     const usernameToEmail = (u) => u.trim() ? `${u.trim()}@school.local` : null;
@@ -241,35 +242,62 @@
                 else await setDoc(doc(db, 'roles', user.email), { role: 'teacher', uid: user.uid, class: '' });
                 rDoc = await getDoc(doc(db, 'roles', user.email));
             }
-            currentRole = rDoc.data().role;
+            const roleData = rDoc.data();
+            currentRole = roleData.role;
+            assignedClass = roleData.class || "";
             
-            // 找出誰是主管理者
-            const mSnap = await getDocs(query(collection(db, 'roles'), where('isMainAdmin', '==', true)));
-            if(!mSnap.empty){
-                const mData = mSnap.docs[0].data();
-                mainAdminUID = mData.uid;
-                const mnd = await getDoc(doc(db, 'usernames', mSnap.docs[0].id));
-                mainAdminName = mnd.exists() ? mnd.data().displayName : "管理者";
-            } else { mainAdminUID = user.uid; mainAdminName = currentUsername; }
+            if(roleData.sharedWith) {
+                mainAdminUID = roleData.sharedWith;
+                const mSnap = await getDocs(query(collection(db, 'roles'), where('uid', '==', mainAdminUID), where('isMainAdmin', '==', true)));
+                if(!mSnap.empty){
+                    const mnd = await getDoc(doc(db, 'usernames', mSnap.docs[0].id));
+                    mainAdminName = mnd.exists() ? mnd.data().displayName : "原創管理者";
+                }
+            } else {
+                mainAdminUID = user.uid;
+                mainAdminName = currentUsername;
+            }
 
-            applyUI(rDoc.data().class || "");
+            applyUI();
             refreshClassList();
             refreshMemberList();
+            refreshUserSelect();
             initGrid();
         } else { document.getElementById('auth-overlay').classList.remove('hidden'); }
     });
 
-    function applyUI(assigned) {
+    function applyUI() {
         const isAdmin = currentRole === 'admin';
         document.getElementById('role-badge').innerText = isAdmin ? "🛡️ 管理者" : "👨‍🏫 導師";
         document.getElementById('role-badge').className = "role-badge " + (isAdmin ? "admin" : "teacher");
         document.getElementById('admin-setup-panel').style.display = isAdmin ? 'block' : 'none';
         document.getElementById('layout-group').style.display = isAdmin ? 'block' : 'none';
-        document.getElementById('shuffle-group').style.display = isAdmin ? 'block' : 'none';
+        
+        // 隨機排列區域：導師現在也可以用，不隱藏
+        document.getElementById('shuffle-group').style.display = 'block';
         document.getElementById('btn-new').style.display = isAdmin ? 'block' : 'none';
         
-        if(isAdmin) document.getElementById('main-admin-info').innerText = `正在與「${mainAdminName}」共用資料庫`;
-        else document.getElementById('user-sub-info').innerText = `負責班級：${assigned || '未指派'}`;
+        if(isAdmin && mainAdminUID !== currentUser.uid) {
+            document.getElementById('main-admin-info').innerText = `🔗 協作模式：正在編輯 ${mainAdminName} 的資料庫`;
+        } else if(isAdmin) {
+            document.getElementById('main-admin-info').innerText = `🏠 主管理者：這是您的主資料庫`;
+        }
+        
+        if(!isAdmin) document.getElementById('user-sub-info').innerText = `負責班級：${assignedClass || '未指派'}`;
+        else document.getElementById('user-sub-info').innerText = "";
+    }
+
+    async function refreshUserSelect() {
+        if(currentRole !== 'admin') return;
+        const select = document.getElementById('setup-username-select');
+        select.innerHTML = '<option value="">-- 選擇註冊成員 --</option>';
+        const snap = await getDocs(collection(db, 'usernames'));
+        snap.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d.data().displayName;
+            opt.innerText = d.data().displayName;
+            select.appendChild(opt);
+        });
     }
 
     async function refreshMemberList() {
@@ -286,7 +314,7 @@
             const div = document.createElement('div');
             div.className = 'admin-item';
             div.innerHTML = `
-                <span>${name} (${data.role === 'admin' ? '管理者' : '導師'})</span>
+                <span>${name} (${data.role === 'admin' ? '管理者' : '導師：' + (data.class || '無')})</span>
                 <button onclick="removeMember('${d.id}')" style="width:auto; padding:2px 8px; background:#fee2e2; color:red; margin:0;">刪除</button>
             `;
             items.appendChild(div);
@@ -301,23 +329,18 @@
     }
 
     window.assignRole = async (roleType) => {
-        const n = document.getElementById('setup-username').value.trim();
+        const n = document.getElementById('setup-username-select').value;
         const c = document.getElementById('setup-class').value;
-        if(!n) return alert('請輸入對象姓名');
+        if(!n) return alert('請選擇對象姓名');
         const e = usernameToEmail(n);
         
-        // 檢查該用戶是否已註冊
-        const check = await getDoc(doc(db, 'usernames', e));
-        if(!check.exists()) return alert('找不到此用戶，請確認對方是否已經註冊過帳號。');
-
         await setDoc(doc(db, 'roles', e), { 
             role: roleType, 
             class: roleType === 'teacher' ? c : '', 
-            uid: '', 
             sharedWith: mainAdminUID 
         }, { merge: true });
         
-        showToast(`已將 ${n} 設為 ${roleType === 'admin' ? '管理者' : '導師'}`);
+        showToast(`已成功指派 ${n} 為 ${roleType === 'admin' ? '管理者' : '導師'}`);
         refreshMemberList();
     };
 
@@ -337,8 +360,8 @@
         div.draggable = true;
         div.innerHTML = `<span class="student-name">${name}</span>`;
 
+        // 開放權限給導師：導師現在可以編輯自己負責的班級
         div.onclick = () => {
-            if(currentRole !== 'admin') return;
             const oldName = div.querySelector('.student-name').innerText;
             const newName = prompt("學生姓名：", oldName);
             if (newName !== null) div.querySelector('.student-name').innerText = newName.trim();
@@ -346,13 +369,10 @@
 
         div.oncontextmenu = (e) => {
             e.preventDefault();
-            if(currentRole !== 'admin') return;
             div.classList.toggle('is-fixed');
-            showToast(div.classList.contains('is-fixed') ? "位置已鎖定" : "解除鎖定");
         };
 
         div.ondragstart = (e) => {
-            if(currentRole !== 'admin') { e.preventDefault(); return; }
             draggedElement = div; e.dataTransfer.effectAllowed = "move"; div.style.opacity = "0.5";
         };
         div.ondragend = () => { draggedElement = null; div.style.opacity = "1"; document.querySelectorAll('.seat').forEach(s => s.classList.remove('drag-over')); };
@@ -373,6 +393,7 @@
     }
 
     async function refreshClassList() {
+        if(!mainAdminUID) return;
         const drop = document.getElementById('classDropdown'), sDrop = document.getElementById('setup-class');
         drop.innerHTML = '<option value="">-- 選擇班級 --</option>'; sDrop.innerHTML = '<option value="">選擇班級</option>';
         const snap = await getDocs(collection(db, 'users', mainAdminUID, 'classes'));
@@ -390,20 +411,34 @@
     window.saveToCloud = async () => {
         const title = document.getElementById('classTitle').value.trim();
         if(!title) return alert('請輸入班級名稱');
+        
+        // 導師權限檢查：如果是導師，只能儲存自己負責的班級
+        if(currentRole === 'teacher' && title !== assignedClass) {
+            return alert(`權限不足！您只能儲存與指派給您的班級「${assignedClass}」名稱相符的資料。`);
+        }
+
         const seats = Array.from(document.querySelectorAll('.seat')).map(s => ({
             name: s.querySelector('.student-name').innerText,
             fixed: s.classList.contains('is-fixed')
         }));
+
         await setDoc(doc(db, 'users', mainAdminUID, 'classes', title), {
             cols: document.getElementById('cols').value, rows: document.getElementById('rows').value,
-            remarks: document.getElementById('class-remarks').value, seats, editor: currentUsername
+            remarks: document.getElementById('class-remarks').value, seats, 
+            lastEditedBy: currentUsername, lastEditedAt: new Date().toISOString()
         });
-        showToast('✅ 儲存成功'); refreshClassList();
+        showToast('✅ 雲端同步成功'); refreshClassList();
     };
 
     window.loadFromDropdown = async () => {
         const s = document.getElementById('classDropdown').value;
         if(!s) return;
+
+        // 導師權限檢查：不能看別班的座位
+        if(currentRole === 'teacher' && s !== assignedClass) {
+            return alert(`權限不足！您被指派負責的班級是「${assignedClass}」，無法查看其他班級資料。`);
+        }
+
         const d = await getDoc(doc(db, 'users', mainAdminUID, 'classes', s));
         if(d.exists()){
             const data = d.data();
@@ -416,12 +451,13 @@
             grid.style.gridTemplateColumns = `repeat(${data.cols}, 120px)`;
             grid.innerHTML = '';
             data.seats.forEach(sd => grid.appendChild(createSeat(sd.name, sd.fixed)));
+            showToast(`已載入佈局 (最後編輯：${data.lastEditedBy || '未知'})`);
         }
     };
 
     window.shuffleNonFixed = () => {
         const students = document.getElementById('studentList').value.split('\n').map(s => s.trim()).filter(s => s);
-        if(!students.length) return alert('請在下方文字方塊輸入學生名單');
+        if(!students.length) return alert('請在文字方塊輸入學生名單');
         const seats = Array.from(document.querySelectorAll('.seat'));
         const available = seats.filter(s => !s.classList.contains('is-fixed'));
         if(students.length > available.length) return alert('學生人數大於可用位置');
