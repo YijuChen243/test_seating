@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>雲端考試座位管理系統</title>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --fixed: #ffeaa7; --fixed-border: #fdcb6e;
+            --primary: #2563eb; --primary-dark: #1d4ed8;
+            --bg: #f0f4ff; --surface: #ffffff;
+            --success: #10b981; --warning: #f59e0b;
+            --danger: #ef4444; --purple: #7c3aed;
+            --text: #1e293b; --text-muted: #64748b;
+            --border: #e2e8f0;
+            --admin-accent: #2563eb;
+            --teacher-accent: #7c3aed;
+            --notif-bg: #fef3c7; --notif-border: #f59e0b;
+            --sidebar-w: 340px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans TC', "Microsoft JhengHei", sans-serif;
+            background: var(--bg);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            color: var(--text);
+        }
+
+        /* ─── 側邊欄 ─── */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--surface);
+            padding: 0;
+            box-shadow: 4px 0 20px rgba(0,0,0,0.06);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header {
+            padding: 24px 20px 16px;
+            border-bottom: 1px solid var(--border);
+            position: sticky; top: 0;
+            background: var(--surface);
+            z-index: 10;
+        }
+
+        .role-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 4px 12px; border-radius: 20px;
+            font-size: 13px; font-weight: 700; letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+        .role-badge.admin { background: #dbeafe; color: var(--admin-accent); }
+        .role-badge.teacher { background: #ede9fe; color: var(--teacher-accent); }
+
+        .user-email {
+            font-size: 13px; color: var(--text-muted);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        .sidebar-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 14px; }
+
+        .config-group {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .config-group h3 {
+            margin: 0 0 14px 0;
+            font-size: 14px; font-weight: 700; color: var(--text);
+            display: flex; align-items: center; gap: 8px;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+
+        label { font-size: 13px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 6px; }
+
+        input[type="text"], input[type="number"], input[type="email"],
+        input[type="password"], textarea, select {
+            width: 100%; padding: 10px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: 8px; font-size: 14px;
+            background: white; color: var(--text);
+            font-family: inherit;
+            transition: border-color 0.2s;
+            margin-bottom: 10px;
+        }
+        input:focus, textarea:focus, select:focus {
+            outline: none; border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+        }
+        textarea { height: 120px; resize: vertical; }
+
+        /* ─── 按鈕 ─── */
+        button {
+            width: 100%; padding: 11px 14px;
+            margin-bottom: 8px; border: none;
+            border-radius: 8px; cursor: pointer;
+            font-weight: 700; transition: all 0.15s;
+            font-size: 14px; font-family: inherit;
+            display: flex; align-items: center; justify-content: center; gap: 7px;
+        }
+        button:hover { filter: brightness(1.06); transform: translateY(-1px); }
+        button:active { transform: translateY(0); }
+        button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; filter: none; }
+
+        .btn-new    { background: #fee2e2; color: #b91c1c; }
+        .btn-cloud  { background: #dbeafe; color: var(--primary-dark); }
+        .btn-load   { background: #d1fae5; color: #065f46; }
+        .btn-init   { background: var(--text); color: white; }
+        .btn-shuffle{ background: var(--primary); color: white; font-size: 15px; }
+        .btn-img    { background: #fef3c7; color: #92400e; }
+        .btn-pdf    { background: #fee2e2; color: #b91c1c; }
+        .btn-out    { background: #f1f5f9; color: var(--text-muted); margin-top: 0; }
+
+        .btn-row { display: flex; gap: 8px; margin-bottom: 0; }
+        .btn-row button { margin-bottom: 0; }
+
+        /* ─── 通知面板（管理者專用）─── */
+        #notif-panel {
+            background: var(--notif-bg);
+            border: 1.5px solid var(--notif-border);
+            border-radius: 12px; padding: 14px;
+            display: none;
+        }
+        #notif-panel.visible { display: block; }
+        #notif-panel h3 { color: #92400e; margin: 0 0 10px 0; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+        .notif-badge {
+            background: var(--danger); color: white;
+            border-radius: 10px; padding: 2px 8px;
+            font-size: 12px; font-weight: 700;
+        }
+        .notif-item {
+            background: white; border-radius: 8px;
+            padding: 10px 12px; margin-bottom: 8px;
+            border: 1px solid #fde68a;
+            font-size: 13px; line-height: 1.6;
+        }
+        .notif-item .notif-class { font-weight: 700; color: var(--primary); }
+        .notif-item .notif-time { color: var(--text-muted); font-size: 12px; }
+        .notif-item .notif-teacher { color: var(--purple); font-weight: 600; }
+        #btn-clear-notif {
+            background: #92400e; color: white;
+            font-size: 13px; padding: 8px; margin-bottom: 0;
+        }
+
+        /* ─── 主畫面 ─── */
+        .main-content {
+            flex-grow: 1; display: flex;
+            align-items: flex-start; justify-content: center;
+            overflow: auto; padding: 40px;
+        }
+
+        #capture-area {
+            background: white; padding: 50px;
+            border-radius: 20px; box-shadow: 0 8px 40px rgba(0,0,0,0.06);
+            min-width: fit-content; margin: auto; position: relative;
+        }
+
+        #class-title-display {
+            text-align: center; font-size: 2.8rem;
+            margin: 0 0 36px 0; color: var(--text);
+            font-weight: 900; letter-spacing: 2px;
+        }
+
+        .teacher-area { display: flex; justify-content: center; margin-bottom: 44px; }
+        .teacher-desk {
+            width: 100%; max-width: 400px; height: 80px;
+            background: #f1f5f9; border: 2px solid var(--border);
+            border-radius: 8px; display: flex; align-items: center;
+            justify-content: center; font-weight: 700;
+            font-size: 2rem; color: var(--text-muted); letter-spacing: 24px;
+        }
+
+        .grid { display: grid; gap: 14px; justify-content: center; }
+
+        .seat {
+            width: 100%; height: 86px;
+            border: 2px solid var(--border);
+            border-radius: 10px; display: flex;
+            flex-direction: column; align-items: center;
+            justify-content: center; background: #fff;
+            cursor: grab; position: relative;
+            transition: all 0.18s ease; user-select: none;
+        }
+        .seat:hover { border-color: var(--primary); box-shadow: 0 2px 12px rgba(37,99,235,0.12); }
+        .seat.is-fixed { background: var(--fixed); border-color: var(--fixed-border); }
+        .seat.drag-over { border-color: var(--primary); background: #eff6ff; transform: scale(1.03); }
+
+        .student-name { font-size: 1.3rem; font-weight: 700; pointer-events: none; color: var(--text); }
+        .lock-icon { position: absolute; top: 5px; right: 8px; font-size: 13px; pointer-events: none; }
+
+        /* 備註區 */
+        .remarks-area {
+            margin-top: 36px; padding: 18px;
+            background: #f8fafc; border: 2px dashed var(--border);
+            border-radius: 12px;
+        }
+        .remarks-area h3 { margin: 0 0 10px 0; font-size: 14px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+        #class-remarks {
+            width: 100%; height: 90px; border: none; outline: none;
+            resize: vertical; font-size: 14px; background: transparent;
+            font-family: inherit; color: var(--text); line-height: 1.7;
+        }
+
+        /* ─── 登入畫面 ─── */
+        #auth-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15,23,42,0.88);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 1000; backdrop-filter: blur(10px);
+        }
+        #auth-overlay.hidden { display: none; }
+
+        .auth-box {
+            background: white; padding: 44px 48px;
+            border-radius: 20px; width: 90%; max-width: 480px;
+            text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,0.3);
+        }
+        .auth-logo { font-size: 2.8rem; margin-bottom: 6px; }
+        .auth-box h2 { font-size: 1.5rem; margin: 0 0 8px 0; color: var(--text); font-weight: 900; }
+        .auth-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 28px; }
+
+        .auth-field { text-align: left; margin-bottom: 16px; }
+        .auth-field label { font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; display: block; }
+        .auth-field input { margin-bottom: 0; font-size: 15px; padding: 13px 14px; }
+
+        .btn-auth {
+            font-size: 16px; padding: 14px;
+            margin-top: 8px; background: var(--primary); color: white;
+            border-radius: 10px; font-weight: 700;
+        }
+        .auth-switch {
+            margin-top: 18px; font-size: 14px; color: var(--primary);
+            cursor: pointer; text-decoration: underline; font-weight: 600;
+        }
+
+        /* ─── 管理者設定面板 ─── */
+        #admin-setup-panel {
+            background: #fdf4ff; border: 1.5px solid #d8b4fe;
+            border-radius: 12px; padding: 14px; display: none;
+        }
+        #admin-setup-panel.visible { display: block; }
+        #admin-setup-panel h3 { color: #6d28d9; font-size: 14px; margin: 0 0 12px 0; }
+
+        .setup-row {
+            display: flex; gap: 8px; margin-bottom: 8px; align-items: flex-end;
+        }
+        .setup-row input { margin-bottom: 0; font-size: 13px; padding: 9px 10px; flex: 1; }
+        .setup-row select { margin-bottom: 0; font-size: 13px; padding: 9px 10px; flex: 1; }
+        .setup-row button {
+            width: auto; flex-shrink: 0; padding: 9px 14px;
+            margin-bottom: 0; font-size: 13px;
+            background: var(--purple); color: white;
+        }
+
+        .role-list { max-height: 140px; overflow-y: auto; margin-top: 8px; }
+        .role-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 7px 10px; background: white; border-radius: 6px;
+            margin-bottom: 6px; border: 1px solid #e9d5ff; font-size: 13px;
+        }
+        .role-item .ri-email { color: var(--text); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 170px; }
+        .role-item .ri-class { color: var(--purple); font-size: 12px; font-weight: 700; }
+        .role-item .ri-del { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 16px; width: auto; padding: 0 4px; margin: 0; }
+
+        /* ─── Toast ─── */
+        #toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px);
+            background: #1e293b; color: white; padding: 12px 24px;
+            border-radius: 10px; font-size: 14px; font-weight: 600;
+            opacity: 0; transition: all 0.3s; z-index: 9999;
+            pointer-events: none; white-space: nowrap;
+        }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        /* ─── RWD ─── */
+        @media (max-width: 800px) {
+            body { flex-direction: column; height: auto; overflow-y: auto; }
+            .sidebar { width: 100%; }
+            .main-content { padding: 20px; }
+            #capture-area { padding: 20px; min-width: 100%; }
+            #class-title-display { font-size: 2rem; }
+            .teacher-desk { height: 60px; font-size: 1.5rem; }
+            .auth-box { padding: 28px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════ 登入畫面 ═══════════ -->
+<div id="auth-overlay">
+    <div class="auth-box">
+        <div class="auth-logo">🏫</div>
+        <h2 id="auth-title">考試座位管理系統</h2>
+        <p class="auth-sub" id="auth-sub">請使用教師帳號登入</p>
+        <div class="auth-field">
+            <label>電子信箱</label>
+            <input type="email" id="auth-email" placeholder="teacher@school.edu.tw">
+        </div>
+        <div class="auth-field">
+            <label>密碼</label>
+            <input type="password" id="auth-password" placeholder="請輸入密碼">
+        </div>
+        <button class="btn-auth" onclick="handleAuth()">🔐 登入系統</button>
+        <div class="auth-switch" id="auth-switch-text" onclick="toggleAuthMode()">還沒有帳號？點此註冊</div>
+    </div>
+</div>
+
+<!-- ═══════════ 側邊欄 ═══════════ -->
+<div class="sidebar">
+    <div class="sidebar-header">
+        <div class="role-badge" id="role-badge">⏳ 讀取中</div>
+        <div class="user-email" id="user-display">未登入</div>
+    </div>
+
+    <div class="sidebar-body">
+
+        <!-- 通知面板（管理者） -->
+        <div id="notif-panel">
+            <h3>🔔 導師調整通知 <span class="notif-badge" id="notif-count">0</span></h3>
+            <div id="notif-list"></div>
+            <button id="btn-clear-notif" onclick="clearNotifications()">✅ 全部標為已讀</button>
+        </div>
+
+        <!-- 管理者設定面板 -->
+        <div id="admin-setup-panel">
+            <h3>👤 管理導師帳號權限</h3>
+            <div class="setup-row">
+                <input type="email" id="setup-email" placeholder="導師 Email">
+                <select id="setup-class">
+                    <option value="">選擇班級</option>
+                </select>
+                <button onclick="assignTeacher()">＋指派</button>
+            </div>
+            <div class="role-list" id="role-list"></div>
+        </div>
+
+        <!-- 班級管理 -->
+        <div class="config-group">
+            <h3>🗂️ 班級檔案管理</h3>
+            <button class="btn-new" id="btn-new" onclick="createNewClass()">➕ 建立新班級</button>
+
+            <label>選擇班級</label>
+            <select id="classDropdown">
+                <option value="">-- 讀取中... --</option>
+            </select>
+
+            <div class="btn-row">
+                <button class="btn-load" onclick="loadFromDropdown()">📂 載入</button>
+                <button class="btn-cloud" onclick="saveToCloud()">☁️ 儲存</button>
+            </div>
+            <div class="btn-row" style="margin-top:8px;">
+                <button class="btn-img" onclick="downloadImage()">🖼️ 圖片</button>
+                <button class="btn-pdf" onclick="downloadPDF()">📄 PDF</button>
+            </div>
+        </div>
+
+        <!-- 教室配置（管理者） -->
+        <div class="config-group" id="layout-group">
+            <h3>✏️ 教室配置</h3>
+            <label>班級名稱</label>
+            <input type="text" id="classTitle" oninput="syncTitle()" placeholder="例如：資二甲">
+            <div style="display:flex;gap:10px;">
+                <div style="flex:1;"><label>欄數</label><input type="number" id="cols" value="5" min="1"></div>
+                <div style="flex:1;"><label>列數</label><input type="number" id="rows" value="5" min="1"></div>
+            </div>
+            <button class="btn-init" onclick="confirmInit()">🔄 重新佈局（清空座位）</button>
+        </div>
+
+        <!-- 抽籤（管理者） -->
+        <div class="config-group" id="shuffle-group">
+            <h3>🎲 學生抽籤</h3>
+            <textarea id="studentList" placeholder="每行輸入一位學生姓名..."></textarea>
+            <button class="btn-shuffle" onclick="shuffleNonFixed()">🎲 開始隨機抽籤</button>
+        </div>
+
+        <div style="margin-top:auto; padding-top:8px;">
+            <button class="btn-out" onclick="handleLogout()">🚪 登出系統</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════ 主畫面 ═══════════ -->
+<div class="main-content">
+    <div id="capture-area">
+        <h1 id="class-title-display">請輸入班級名稱</h1>
+        <div class="teacher-area"><div class="teacher-desk">講　桌</div></div>
+        <div id="grid" class="grid"></div>
+        <div class="remarks-area">
+            <h3>📝 備註事項</h3>
+            <textarea id="class-remarks" placeholder="請輸入備註（例如：換座位日期、特殊注意事項...）。此處內容會一併儲存與匯出！"></textarea>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- ═══════════ Firebase ═══════════ -->
+<script type="module">
+    import { initializeApp }                              from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut }
+                                                          from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, getDocs, deleteDoc, collection, query, where, orderBy, updateDoc, addDoc, serverTimestamp }
+                                                          from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+    /* ── Firebase 設定（請勿更改） ── */
+  const firebaseConfig = {
+    apiKey: "AIzaSyBMfrzpvb3YO_O8DOBiIEghmp27UNC7ZL4",
+    authDomain: "examseating-859ae.firebaseapp.com",
+    projectId: "examseating-859ae",
+    storageBucket: "examseating-859ae.firebasestorage.app",
+    messagingSenderId: "547686235744",
+    appId: "1:547686235744:web:ba1b0032c43267ce340d05"
+  };
+
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
+
+    /* ── 全域狀態 ── */
+    let currentUser = null;
+    let currentRole = null;   // "admin" | "teacher"
+    let assignedClass = null; // 導師被指派的班級名稱
+    let draggedElement = null;
+    let isRegisterMode = false;
+
+    const gridEl = document.getElementById('grid');
+
+    /* ════════════════════════════════
+       工具：Toast 通知
+    ════════════════════════════════ */
+    function showToast(msg, duration = 2500) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), duration);
+    }
+
+    /* ════════════════════════════════
+       認證
+    ════════════════════════════════ */
+    window.handleAuth = async () => {
+        const email    = document.getElementById('auth-email').value.trim();
+        const password = document.getElementById('auth-password').value;
+        if (!email || !password) return alert('請完整填寫帳號與密碼');
+        try {
+            if (isRegisterMode) {
+                await createUserWithEmailAndPassword(auth, email, password);
+                showToast('✅ 註冊成功！');
+            } else {
+                await signInWithEmailAndPassword(auth, email, password);
+            }
+        } catch (e) {
+            alert('認證失敗，請檢查帳號密碼或網路連線。\n' + e.message);
+        }
+    };
+
+    window.handleLogout = () => signOut(auth);
+
+    window.toggleAuthMode = () => {
+        isRegisterMode = !isRegisterMode;
+        document.getElementById('auth-title').innerText = isRegisterMode ? '教師帳號註冊' : '教室座位管理系統';
+        document.getElementById('auth-sub').innerText   = isRegisterMode ? '填寫資料後完成註冊' : '請使用教師帳號登入';
+        document.getElementById('btn-auth-main') && (document.getElementById('btn-auth-main').innerText = isRegisterMode ? '立即註冊' : '🔐 登入系統');
+        document.getElementById('auth-switch-text').innerText = isRegisterMode ? '已有帳號？點此登入' : '還沒有帳號？點此註冊';
+    };
+
+    /* ════════════════════════════════
+       登入狀態監聽
+    ════════════════════════════════ */
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            currentUser = user;
+            document.getElementById('auth-overlay').classList.add('hidden');
+            document.getElementById('user-display').innerText = user.email;
+
+            // 讀取角色
+            const roleDoc = await getDoc(doc(db, 'roles', user.email));
+            if (roleDoc.exists()) {
+                const data = roleDoc.data();
+                currentRole   = data.role;
+                assignedClass = data.class || null;
+            } else {
+                // 預設為 admin（第一位使用者）
+                currentRole = 'admin';
+            }
+
+            applyRoleUI();
+            initGrid();
+            await refreshClassList();
+            if (currentRole === 'admin') {
+                await loadAdminRoleList();
+                await loadNotifications();
+            }
+        } else {
+            currentUser = null;
+            currentRole = null;
+            assignedClass = null;
+            document.getElementById('auth-overlay').classList.remove('hidden');
+            gridEl.innerHTML = '';
+        }
+    });
+
+    /* ════════════════════════════════
+       套用角色 UI
+    ════════════════════════════════ */
+    function applyRoleUI() {
+        const isAdmin = currentRole === 'admin';
+        const badge   = document.getElementById('role-badge');
+        badge.textContent = isAdmin ? '🛡️ 管理者' : '👨‍🏫 導師';
+        badge.className   = 'role-badge ' + (isAdmin ? 'admin' : 'teacher');
+
+        // 管理者功能
+        document.getElementById('btn-new').style.display       = isAdmin ? '' : 'none';
+        document.getElementById('layout-group').style.display  = isAdmin ? '' : 'none';
+        document.getElementById('shuffle-group').style.display = isAdmin ? '' : 'none';
+        document.getElementById('admin-setup-panel').classList.toggle('visible', isAdmin);
+        document.getElementById('notif-panel').style.display   = isAdmin ? '' : 'none';
+
+        // 導師提示
+        if (!isAdmin) {
+            showToast(`👨‍🏫 您是導師帳號，只能微調 ${assignedClass || ''} 的座位`, 4000);
+        }
+    }
+
+    /* ════════════════════════════════
+       班級清單（下拉）
+    ════════════════════════════════ */
+    async function refreshClassList() {
+        if (!currentUser) return;
+        const dropdown = document.getElementById('classDropdown');
+        dropdown.innerHTML = '<option value="">-- 讀取中... --</option>';
+        try {
+            const snap = await getDocs(collection(db, 'users', getAdminUID(), 'classes'));
+            dropdown.innerHTML = '<option value="">-- 請選擇班級 --</option>';
+
+            // 填入管理者設定面板的班級選單
+            const setupSel = document.getElementById('setup-class');
+            setupSel.innerHTML = '<option value="">選擇班級</option>';
+
+            snap.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.id; opt.textContent = d.id;
+                // 導師只顯示自己的班
+                if (currentRole === 'teacher' && d.id !== assignedClass) return;
+                dropdown.appendChild(opt);
+
+                const opt2 = opt.cloneNode(true);
+                setupSel.appendChild(opt2);
+            });
+        } catch (e) { console.error('抓取班級失敗', e); }
+    }
+
+    /* 取得 admin UID（從 roles 集合找）*/
+    async function getAdminUID() {
+        // 若自己是 admin，直接用自己的 UID
+        if (currentRole === 'admin') return currentUser.uid;
+        // 導師需要找 admin UID
+        try {
+            const snap = await getDocs(query(collection(db, 'roles'), where('role', '==', 'admin')));
+            if (!snap.empty) {
+                const adminEmail = snap.docs[0].id;
+                // 透過 adminEmail 找到 UID（存在 roles 裡）
+                const adminDoc = await getDoc(doc(db, 'roles', adminEmail));
+                return adminDoc.data().uid || currentUser.uid;
+            }
+        } catch (e) {}
+        return currentUser.uid;
+    }
+
+    /* ════════════════════════════════
+       管理者：指派導師班級
+    ════════════════════════════════ */
+    async function loadAdminRoleList() {
+        if (currentRole !== 'admin') return;
+        const list = document.getElementById('role-list');
+        list.innerHTML = '';
+        const snap = await getDocs(collection(db, 'roles'));
+        snap.forEach(d => {
+            if (d.data().role === 'admin') return;
+            const item = document.createElement('div');
+            item.className = 'role-item';
+            item.innerHTML = `
+                <span class="ri-email" title="${d.id}">${d.id}</span>
+                <span class="ri-class">${d.data().class || '未指派'}</span>
+                <button class="ri-del" onclick="removeTeacher('${d.id}')">✕</button>
+            `;
+            list.appendChild(item);
+        });
+    }
+
+    window.assignTeacher = async () => {
+        const email    = document.getElementById('setup-email').value.trim();
+        const cls      = document.getElementById('setup-class').value;
+        if (!email || !cls) return alert('請填寫 Email 並選擇班級');
+        await setDoc(doc(db, 'roles', email), { role: 'teacher', class: cls, uid: '' });
+        showToast(`✅ 已指派 ${email} 管理 ${cls}`);
+        document.getElementById('setup-email').value = '';
+        document.getElementById('setup-class').value = '';
+        await loadAdminRoleList();
+    };
+
+    window.removeTeacher = async (email) => {
+        if (!confirm(`確定要移除 ${email} 的導師權限？`)) return;
+        await deleteDoc(doc(db, 'roles', email));
+        showToast('🗑️ 已移除');
+        await loadAdminRoleList();
+    };
+
+    /* ════════════════════════════════
+       通知系統
+    ════════════════════════════════ */
+    async function loadNotifications() {
+        if (currentRole !== 'admin') return;
+        const panel = document.getElementById('notif-panel');
+        const list  = document.getElementById('notif-list');
+        const badge = document.getElementById('notif-count');
+        list.innerHTML = '';
+
+        try {
+            const snap = await getDocs(
+                query(collection(db, 'notifications'), where('status', '==', 'unread'), orderBy('changedAt', 'desc'))
+            );
+            const count = snap.size;
+            badge.textContent = count;
+            panel.classList.toggle('visible', count > 0);
+
+            snap.forEach(d => {
+                const data = d.data();
+                const time = data.changedAt?.toDate?.() || new Date();
+                const fmt  = time.toLocaleString('zh-TW', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+                const item = document.createElement('div');
+                item.className = 'notif-item';
+                item.innerHTML = `
+                    <div><span class="notif-class">【${data.class}】</span> 座位已調整</div>
+                    <div class="notif-teacher">導師：${data.teacher}</div>
+                    <div class="notif-time">⏰ ${fmt}</div>
+                `;
+                list.appendChild(item);
+            });
+        } catch (e) { console.error('載入通知失敗', e); }
+    }
+
+    async function sendNotification(className) {
+        try {
+            await addDoc(collection(db, 'notifications'), {
+                class: className,
+                teacher: currentUser.email,
+                changedAt: serverTimestamp(),
+                status: 'unread'
+            });
+        } catch (e) { console.error('通知寫入失敗', e); }
+    }
+
+    window.clearNotifications = async () => {
+        const snap = await getDocs(
+            query(collection(db, 'notifications'), where('status', '==', 'unread'))
+        );
+        const promises = snap.docs.map(d => updateDoc(d.ref, { status: 'read' }));
+        await Promise.all(promises);
+        document.getElementById('notif-panel').classList.remove('visible');
+        document.getElementById('notif-count').textContent = '0';
+        document.getElementById('notif-list').innerHTML = '';
+        showToast('✅ 已全部標為已讀');
+    };
+
+    /* ════════════════════════════════
+       班級操作
+    ════════════════════════════════ */
+    window.createNewClass = () => {
+        if (!confirm('確定要建立新班級？目前未儲存內容將遺失。')) return;
+        document.getElementById('classTitle').value = '';
+        document.getElementById('studentList').value = '';
+        document.getElementById('class-remarks').value = '';
+        syncTitle();
+        initGrid();
+        document.getElementById('classTitle').focus();
+    };
+
+    window.loadFromDropdown = async () => {
+        const selected = document.getElementById('classDropdown').value;
+        if (!selected) return alert('請先從下拉選單選擇班級');
+        document.getElementById('classTitle').value = selected;
+        await loadSpecificClass();
+    };
+
+    window.saveToCloud = async () => {
+        if (!currentUser) return;
+        const classTitle = document.getElementById('classTitle').value.trim();
+        if (!classTitle) return alert('請輸入班級名稱');
+
+        const seatData = [];
+        document.querySelectorAll('.seat').forEach(seat => {
+            seatData.push({
+                name: seat.querySelector('.student-name').innerText,
+                isFixed: seat.classList.contains('is-fixed')
+            });
+        });
+
+        const targetUID = await getAdminUID();
+
+        try {
+            await setDoc(doc(db, 'users', targetUID, 'classes', classTitle), {
+                cols: document.getElementById('cols').value,
+                rows: document.getElementById('rows').value,
+                rawList: document.getElementById('studentList').value,
+                remarks: document.getElementById('class-remarks').value,
+                layout: seatData
+            });
+
+            // 若是導師儲存，發送通知
+            if (currentRole === 'teacher') {
+                await sendNotification(classTitle);
+                showToast('☁️ 已儲存並通知管理者');
+            } else {
+                showToast('☁️ 已成功同步至雲端');
+                await refreshClassList();
+            }
+        } catch (e) {
+            alert('儲存失敗：' + e.message);
+        }
+    };
+
+    async function loadSpecificClass() {
+        const classTitle = document.getElementById('classTitle').value;
+        const targetUID  = await getAdminUID();
+        const docSnap    = await getDoc(doc(db, 'users', targetUID, 'classes', classTitle));
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            // 管理者才能改欄列
+            if (currentRole === 'admin') {
+                document.getElementById('cols').value = data.cols;
+                document.getElementById('rows').value = data.rows;
+                document.getElementById('studentList').value = data.rawList || '';
+            }
+            document.getElementById('class-remarks').value = data.remarks || '';
+            syncTitle();
+            initGrid();
+            const seats = document.querySelectorAll('.seat');
+            (data.layout || []).forEach((sDat, i) => {
+                if (seats[i]) updateSeat(seats[i], sDat.name, sDat.isFixed);
+            });
+            showToast(`📂 已載入 ${classTitle}`);
+        } else {
+            alert('找不到此班級資料');
+        }
+    }
+
+    /* ════════════════════════════════
+       座位格
+    ════════════════════════════════ */
+    window.initGrid = function () {
+        const c = parseInt(document.getElementById('cols').value) || 5;
+        const r = parseInt(document.getElementById('rows').value) || 5;
+        gridEl.style.gridTemplateColumns = `repeat(${c}, minmax(60px, 110px))`;
+        gridEl.innerHTML = '';
+        for (let i = 0; i < c * r; i++) {
+            const seat = document.createElement('div');
+            seat.className = 'seat empty';
+            seat.draggable = true;
+            seat.innerHTML = '<span class="student-name"></span>';
+
+            // 點擊編輯（管理者）
+            seat.onclick = () => {
+                if (currentRole !== 'admin') return;
+                const old  = seat.querySelector('.student-name').innerText;
+                const name = prompt('編輯學生姓名：', old);
+                if (name !== null) updateSeat(seat, name.trim(), name.trim() !== '');
+            };
+
+            // 右鍵鎖定（管理者）
+            seat.oncontextmenu = (e) => {
+                e.preventDefault();
+                if (currentRole !== 'admin') return;
+                if (!seat.classList.contains('empty')) {
+                    seat.classList.toggle('is-fixed');
+                    updateLockIcon(seat);
+                }
+            };
+
+            setupDnD(seat);
+            gridEl.appendChild(seat);
+        }
+    };
+
+    function updateSeat(seat, name, fixed) {
+        seat.querySelector('.student-name').innerText = name;
+        if (name) {
+            seat.className = 'seat occupied';
+            if (fixed) seat.classList.add('is-fixed');
+        } else {
+            seat.className = 'seat empty';
+        }
+        updateLockIcon(seat);
+    }
+
+    function updateLockIcon(seat) {
+        const icon = seat.querySelector('.lock-icon');
+        if (icon) icon.remove();
+        if (seat.classList.contains('is-fixed')) {
+            seat.insertAdjacentHTML('beforeend', '<span class="lock-icon">📌</span>');
+        }
+    }
+
+    /* ─── 拖曳（導師只能交換，不能拖空位）─── */
+    function setupDnD(seat) {
+        seat.ondragstart = (e) => {
+            if (seat.classList.contains('empty')) return e.preventDefault();
+            // 導師不能拖曳固定座位
+            if (currentRole === 'teacher' && seat.classList.contains('is-fixed')) return e.preventDefault();
+            draggedElement = seat;
+            seat.style.opacity = '0.5';
+        };
+        seat.ondragend = () => { seat.style.opacity = ''; };
+        seat.ondragover = (e) => { e.preventDefault(); seat.classList.add('drag-over'); };
+        seat.ondragleave = () => seat.classList.remove('drag-over');
+        seat.ondrop = (e) => {
+            e.preventDefault();
+            seat.classList.remove('drag-over');
+            if (!draggedElement || draggedElement === seat) return;
+
+            // 導師只能交換有人的座位（不能和空位換）
+            if (currentRole === 'teacher' && seat.classList.contains('empty')) {
+                showToast('⚠️ 導師只能交換兩個有人的座位');
+                return;
+            }
+            // 不能移動固定座位的目標
+            if (currentRole === 'teacher' && seat.classList.contains('is-fixed')) {
+                showToast('⚠️ 此座位已鎖定，無法移動');
+                return;
+            }
+
+            const tempHTML  = seat.innerHTML;
+            const tempClass = seat.className;
+            seat.innerHTML  = draggedElement.innerHTML;
+            seat.className  = draggedElement.className;
+            draggedElement.innerHTML = tempHTML;
+            draggedElement.className = tempClass;
+        };
+    }
+
+    /* ─── 抽籤（管理者限定）─── */
+    window.shuffleNonFixed = () => {
+        if (currentRole !== 'admin') return;
+        const students = document.getElementById('studentList').value
+            .split('\n').map(s => s.trim()).filter(s => s);
+        const allSeats  = Array.from(document.querySelectorAll('.seat'));
+        const available = allSeats.filter(s => !s.classList.contains('is-fixed'));
+        if (students.length > available.length) return alert('學生人數大於可用座位數！');
+        students.sort(() => Math.random() - 0.5);
+        available.forEach(s => updateSeat(s, '', false));
+        students.forEach((name, i) => updateSeat(available[i], name, false));
+    };
+
+    /* ─── 同步標題 ─── */
+    window.syncTitle = () => {
+        const raw = document.getElementById('classTitle').value;
+        document.getElementById('class-title-display').innerText = raw ? raw + '　座位表' : '請輸入班級名稱';
+    };
+
+    window.confirmInit = () => {
+        if (confirm('確定要重新佈局並清空所有座位嗎？')) initGrid();
+    };
+
+    /* ════════════════════════════════
+       匯出
+    ════════════════════════════════ */
+    window.downloadImage = () => {
+        const title = document.getElementById('classTitle').value || '座位表';
+        const area  = document.getElementById('capture-area');
+        html2canvas(area, { scale: 2, useCORS: true, scrollX: 0, scrollY: 0,
+            width: area.scrollWidth, height: area.scrollHeight })
+        .then(canvas => {
+            const a = document.createElement('a');
+            a.download = `${title}座位表.png`;
+            a.href = canvas.toDataURL('image/png');
+            a.click();
+        });
+    };
+
+    window.downloadPDF = () => {
+        const { jsPDF } = window.jspdf;
+        const title = document.getElementById('classTitle').value || '座位表';
+        const area  = document.getElementById('capture-area');
+        html2canvas(area, { scale: 2, useCORS: true, scrollX: 0, scrollY: 0,
+            width: area.scrollWidth, height: area.scrollHeight })
+        .then(canvas => {
+            const imgData   = canvas.toDataURL('image/png');
+            const orient    = canvas.width > canvas.height ? 'l' : 'p';
+            const pdf       = new jsPDF(orient, 'mm', 'a4');
+            const pw        = pdf.internal.pageSize.getWidth();
+            const ph        = pdf.internal.pageSize.getHeight();
+            const props     = pdf.getImageProperties(imgData);
+            const margin    = 10;
+            let fw = pw - margin * 2;
+            let fh = (props.height * fw) / props.width;
+            if (fh > ph - margin * 2) { fh = ph - margin * 2; fw = (props.width * fh) / props.height; }
+            pdf.addImage(imgData, 'PNG', (pw - fw) / 2, margin, fw, fh);
+            pdf.save(`${title}座位表.pdf`);
+        });
+    };
+
+    /* ════════════════════════════════
+       Firestore 安全規則提示
+       請在 Firebase Console 加入：
+       rules_version = '2';
+       service cloud.firestore {
+         match /databases/{database}/documents {
+           match /roles/{email} {
+             allow read: if request.auth != null;
+             allow write: if request.auth != null && get(/databases/$(database)/documents/roles/$(request.auth.token.email)).data.role == 'admin';
+           }
+           match /users/{uid}/classes/{classId} {
+             allow read, write: if request.auth != null;
+           }
+           match /notifications/{id} {
+             allow read, write: if request.auth != null;
+           }
+         }
+       }
+    ════════════════════════════════ */
+
+</script>
+</body>
+</html>
