@@ -239,6 +239,11 @@
             margin-top: 18px; font-size: 14px; color: var(--primary);
             cursor: pointer; text-decoration: underline; font-weight: 600;
         }
+        .auth-hint {
+            margin-top: 12px; font-size: 12px; color: var(--text-muted);
+            background: #f8fafc; border-radius: 8px; padding: 8px 12px;
+            line-height: 1.6;
+        }
 
         #admin-setup-panel {
             background: #fdf4ff; border: 1.5px solid #d8b4fe;
@@ -294,17 +299,18 @@
     <div class="auth-box">
         <div class="auth-logo">🏫</div>
         <h2 id="auth-title">考試座位管理系統</h2>
-        <p class="auth-sub" id="auth-sub">請使用教師帳號登入</p>
+        <p class="auth-sub" id="auth-sub">請輸入帳號與密碼登入</p>
         <div class="auth-field">
-            <label>電子信箱</label>
-            <input type="email" id="auth-email" placeholder="teacher@school.edu.tw">
+            <label>帳號（中文姓名或自訂名稱）</label>
+            <input type="text" id="auth-username" placeholder="例如：王小明">
         </div>
         <div class="auth-field">
-            <label>密碼</label>
+            <label>密碼（英數組合）</label>
             <input type="password" id="auth-password" placeholder="請輸入密碼">
         </div>
         <button class="btn-auth" onclick="handleAuth()">🔐 登入系統</button>
         <div class="auth-switch" id="auth-switch-text" onclick="toggleAuthMode()">還沒有帳號？點此註冊</div>
+        <div class="auth-hint" id="auth-hint">💡 帳號可使用中文姓名，密碼請設定英數組合（至少6碼）</div>
     </div>
 </div>
 
@@ -325,7 +331,7 @@
         <div id="admin-setup-panel">
             <h3>👤 管理導師帳號權限</h3>
             <div class="setup-row">
-                <input type="email" id="setup-email" placeholder="導師 Email">
+                <input type="text" id="setup-username" placeholder="導師帳號（中文姓名）">
                 <select id="setup-class"><option value="">選擇班級</option></select>
                 <button onclick="assignTeacher()">＋指派</button>
             </div>
@@ -392,10 +398,9 @@
     import { getFirestore, doc, setDoc, getDoc, getDocs, deleteDoc, collection, query, where, orderBy, updateDoc, addDoc, serverTimestamp }
         from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-    // ▼ 您的 Firebase 設定（請勿更改）▼
     const firebaseConfig = {
         apiKey: "AIzaSyBMfrzpvb3YO_O8DOBiIEghmp27UNC7ZL4",
-        authDomain: "yijuchen243.github.io",
+        authDomain: "examseating-859ae.firebaseapp.com",
         projectId: "examseating-859ae",
         storageBucket: "examseating-859ae.firebasestorage.app",
         messagingSenderId: "547686235744",
@@ -406,10 +411,18 @@
     const auth = getAuth(app);
     const db   = getFirestore(app);
 
+    // ★ 將帳號名稱轉成合法 email（Firebase 需要 email 格式）
+    function usernameToEmail(username) {
+        // 將中文及特殊字元做簡單編碼，確保產生合法 email
+        const encoded = encodeURIComponent(username).replace(/%/g, '_');
+        return encoded + '@school.local';
+    }
+
     let currentUser    = null;
     let currentRole    = null;
+    let currentUsername = null; // ★ 儲存顯示用的帳號名稱
     let assignedClass  = null;
-    let adminUID       = null;   // ★ 全域快取，整個 session 只查一次
+    let adminUID       = null;
     let draggedElement = null;
     let isRegisterMode = false;
 
@@ -424,25 +437,40 @@
 
     /* ════ 認證 ════ */
     window.handleAuth = async () => {
-        const email    = document.getElementById('auth-email').value.trim();
+        const username = document.getElementById('auth-username').value.trim();
         const password = document.getElementById('auth-password').value;
-        if (!email || !password) return alert('請完整填寫帳號與密碼');
+        if (!username || !password) return alert('請完整填寫帳號與密碼');
+        if (password.length < 6) return alert('密碼至少需要 6 碼');
+
+        const email = usernameToEmail(username);
+
         try {
             if (isRegisterMode) {
                 await createUserWithEmailAndPassword(auth, email, password);
+                // 儲存帳號對應的顯示名稱
+                await setDoc(doc(db, 'usernames', email), { displayName: username });
                 showToast('✅ 註冊成功！');
             } else {
                 await signInWithEmailAndPassword(auth, email, password);
             }
-        } catch (e) { alert('認證失敗，請檢查帳號密碼。\n' + e.message); }
+        } catch (e) {
+            if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+                alert('帳號或密碼錯誤，請重新確認。');
+            } else {
+                alert('認證失敗：' + e.message);
+            }
+        }
     };
 
     window.handleLogout  = () => signOut(auth);
     window.toggleAuthMode = () => {
         isRegisterMode = !isRegisterMode;
-        document.getElementById('auth-title').innerText      = isRegisterMode ? '教師帳號註冊'     : '考試座位管理系統';
-        document.getElementById('auth-sub').innerText        = isRegisterMode ? '填寫資料後完成註冊'  : '請使用教師帳號登入';
-        document.getElementById('auth-switch-text').innerText = isRegisterMode ? '已有帳號？點此登入' : '還沒有帳號？點此註冊';
+        document.getElementById('auth-title').innerText       = isRegisterMode ? '教師帳號註冊'      : '考試座位管理系統';
+        document.getElementById('auth-sub').innerText         = isRegisterMode ? '填寫資料後完成註冊'   : '請輸入帳號與密碼登入';
+        document.getElementById('auth-switch-text').innerText = isRegisterMode ? '已有帳號？點此登入'  : '還沒有帳號？點此註冊';
+        document.getElementById('auth-hint').innerText        = isRegisterMode
+            ? '💡 帳號可使用中文姓名，密碼請設定英數組合（至少6碼）'
+            : '💡 帳號可使用中文姓名，密碼請設定英數組合（至少6碼）';
     };
 
     /* ════ 登入監聽 ════ */
@@ -450,9 +478,17 @@
         if (user) {
             currentUser = user;
             document.getElementById('auth-overlay').classList.add('hidden');
-            document.getElementById('user-display').innerText = user.email;
 
-            // 1. 讀取角色
+            // 取得顯示名稱
+            try {
+                const nameDoc = await getDoc(doc(db, 'usernames', user.email));
+                currentUsername = nameDoc.exists() ? nameDoc.data().displayName : user.email;
+            } catch(e) {
+                currentUsername = user.email;
+            }
+            document.getElementById('user-display').innerText = currentUsername;
+
+            // 讀取角色（用 email 當 key 不變）
             const roleDoc = await getDoc(doc(db, 'roles', user.email));
             if (roleDoc.exists()) {
                 currentRole   = roleDoc.data().role;
@@ -461,14 +497,11 @@
                 currentRole = 'admin';
             }
 
-            // 2. ★ 決定並快取 adminUID（整個 session 只做一次）
             if (currentRole === 'admin') {
                 adminUID = user.uid;
-                // 把自己的 uid 寫回 roles，讓導師之後能查到
                 await setDoc(doc(db, 'roles', user.email),
                     { role: 'admin', uid: user.uid }, { merge: true });
             } else {
-                // 導師：去 roles 找 admin 的 uid
                 try {
                     const snap = await getDocs(
                         query(collection(db, 'roles'), where('role', '==', 'admin'))
@@ -476,14 +509,13 @@
                     if (!snap.empty && snap.docs[0].data().uid) {
                         adminUID = snap.docs[0].data().uid;
                     } else {
-                        adminUID = user.uid; // fallback
+                        adminUID = user.uid;
                     }
                 } catch (e) {
                     adminUID = user.uid;
                 }
             }
 
-            // 3. 套用 UI、初始化
             applyRoleUI();
             initGrid();
             await refreshClassList();
@@ -493,7 +525,7 @@
             }
         } else {
             currentUser = null; currentRole = null;
-            assignedClass = null; adminUID = null;
+            currentUsername = null; assignedClass = null; adminUID = null;
             document.getElementById('auth-overlay').classList.remove('hidden');
             gridEl.innerHTML = '';
         }
@@ -515,7 +547,7 @@
         if (!isAdmin) showToast(`👨‍🏫 導師帳號，只能微調 ${assignedClass || ''} 的座位`, 4000);
     }
 
-    /* ════ ★ 班級清單（直接用快取的 adminUID）════ */
+    /* ════ 班級清單 ════ */
     async function refreshClassList() {
         if (!currentUser || !adminUID) return;
         const dropdown = document.getElementById('classDropdown');
@@ -550,31 +582,41 @@
         const list = document.getElementById('role-list');
         list.innerHTML = '';
         const snap = await getDocs(collection(db, 'roles'));
-        snap.forEach(d => {
-            if (d.data().role === 'admin') return;
+        for (const d of snap.docs) {
+            if (d.data().role === 'admin') continue;
+            // 取得顯示名稱
+            let displayName = d.id;
+            try {
+                const nd = await getDoc(doc(db, 'usernames', d.id));
+                if (nd.exists()) displayName = nd.data().displayName;
+            } catch(e) {}
+
             const item = document.createElement('div');
             item.className = 'role-item';
             item.innerHTML = `
-                <span class="ri-email" title="${d.id}">${d.id}</span>
+                <span class="ri-email" title="${d.id}">${displayName}</span>
                 <span class="ri-class">${d.data().class || '未指派'}</span>
                 <button class="ri-del" onclick="removeTeacher('${d.id}')">✕</button>`;
             list.appendChild(item);
-        });
+        }
     }
 
     window.assignTeacher = async () => {
-        const email = document.getElementById('setup-email').value.trim();
-        const cls   = document.getElementById('setup-class').value;
-        if (!email || !cls) return alert('請填寫 Email 並選擇班級');
+        const username = document.getElementById('setup-username').value.trim();
+        const cls      = document.getElementById('setup-class').value;
+        if (!username || !cls) return alert('請填寫帳號並選擇班級');
+        const email = usernameToEmail(username);
         await setDoc(doc(db, 'roles', email), { role: 'teacher', class: cls, uid: '' });
-        showToast(`✅ 已指派 ${email} 管理 ${cls}`);
-        document.getElementById('setup-email').value = '';
+        // 儲存顯示名稱
+        await setDoc(doc(db, 'usernames', email), { displayName: username }, { merge: true });
+        showToast(`✅ 已指派 ${username} 管理 ${cls}`);
+        document.getElementById('setup-username').value = '';
         document.getElementById('setup-class').value = '';
         await loadAdminRoleList();
     };
 
     window.removeTeacher = async (email) => {
-        if (!confirm(`確定要移除 ${email} 的導師權限？`)) return;
+        if (!confirm(`確定要移除此導師的權限？`)) return;
         await deleteDoc(doc(db, 'roles', email));
         showToast('🗑️ 已移除');
         await loadAdminRoleList();
@@ -610,7 +652,7 @@
     async function sendNotification(className) {
         try {
             await addDoc(collection(db, 'notifications'), {
-                class: className, teacher: currentUser.email,
+                class: className, teacher: currentUsername || currentUser.email,
                 changedAt: serverTimestamp(), status: 'unread'
             });
         } catch (e) { console.error('通知寫入失敗', e); }
