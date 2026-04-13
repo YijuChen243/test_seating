@@ -62,9 +62,14 @@
         .role-badge.admin { background: #dbeafe; color: var(--admin-accent); }
         .role-badge.teacher { background: #ede9fe; color: var(--teacher-accent); }
 
-        .user-email {
-            font-size: 13px; color: var(--text-muted);
+        /* ★ 修正：顯示名稱樣式，不會溢出 */
+        .user-display-name {
+            font-size: 15px; font-weight: 700; color: var(--text);
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            margin-bottom: 2px;
+        }
+        .user-sub-info {
+            font-size: 11px; color: var(--text-muted);
         }
 
         .sidebar-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 14px; }
@@ -209,6 +214,7 @@
             font-family: inherit; color: var(--text); line-height: 1.7;
         }
 
+        /* ════ 認證介面 ════ */
         #auth-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(15,23,42,0.88);
@@ -231,10 +237,13 @@
         .auth-field input { margin-bottom: 0; font-size: 15px; padding: 13px 14px; }
 
         .btn-auth {
-            font-size: 16px; padding: 14px;
+            width: 100%; font-size: 16px; padding: 14px;
             margin-top: 8px; background: var(--primary); color: white;
-            border-radius: 10px; font-weight: 700;
+            border-radius: 10px; font-weight: 700; border: none; cursor: pointer;
+            font-family: inherit; transition: all 0.15s;
         }
+        .btn-auth:hover { filter: brightness(1.08); }
+
         .auth-switch {
             margin-top: 18px; font-size: 14px; color: var(--primary);
             cursor: pointer; text-decoration: underline; font-weight: 600;
@@ -245,12 +254,22 @@
             line-height: 1.6;
         }
 
+        /* ════ 管理者設定面板 ════ */
         #admin-setup-panel {
             background: #fdf4ff; border: 1.5px solid #d8b4fe;
             border-radius: 12px; padding: 14px; display: none;
         }
         #admin-setup-panel.visible { display: block; }
         #admin-setup-panel h3 { color: #6d28d9; font-size: 14px; margin: 0 0 12px 0; }
+
+        /* ★ 新增：主管理者綁定提示 */
+        .main-admin-info {
+            background: #eff6ff; border: 1px solid #bfdbfe;
+            border-radius: 8px; padding: 10px 12px;
+            font-size: 12px; color: #1e40af; margin-bottom: 12px;
+            line-height: 1.6;
+        }
+        .main-admin-info strong { display: block; margin-bottom: 2px; }
 
         .setup-row {
             display: flex; gap: 8px; margin-bottom: 8px; align-items: flex-end;
@@ -308,16 +327,18 @@
             <label>密碼（英數組合）</label>
             <input type="password" id="auth-password" placeholder="請輸入密碼">
         </div>
-        <button class="btn-auth" onclick="handleAuth()">🔐 登入系統</button>
+        <button class="btn-auth" id="btn-auth-action" onclick="handleAuth()">🔐 登入系統</button>
         <div class="auth-switch" id="auth-switch-text" onclick="toggleAuthMode()">還沒有帳號？點此註冊</div>
-        <div class="auth-hint" id="auth-hint">💡 帳號可使用中文姓名，密碼請設定英數組合（至少6碼）</div>
+        <div class="auth-hint">💡 帳號可使用中文姓名，密碼請設定英數組合（至少6碼）</div>
     </div>
 </div>
 
 <div class="sidebar">
     <div class="sidebar-header">
         <div class="role-badge" id="role-badge">⏳ 讀取中</div>
-        <div class="user-email" id="user-display">未登入</div>
+        <!-- ★ 修正：分兩行顯示，上方顯示中文名稱，下方顯示角色說明 -->
+        <div class="user-display-name" id="user-display-name">未登入</div>
+        <div class="user-sub-info" id="user-sub-info"></div>
     </div>
 
     <div class="sidebar-body">
@@ -330,6 +351,11 @@
 
         <div id="admin-setup-panel">
             <h3>👤 管理導師帳號權限</h3>
+            <!-- ★ 新增：顯示目前共用的主管理者資訊 -->
+            <div class="main-admin-info" id="main-admin-info" style="display:none;">
+                <strong>📁 共用資料庫</strong>
+                <span id="main-admin-name-display"></span>
+            </div>
             <div class="setup-row">
                 <input type="text" id="setup-username" placeholder="導師帳號（中文姓名）">
                 <select id="setup-class"><option value="">選擇班級</option></select>
@@ -411,20 +437,20 @@
     const auth = getAuth(app);
     const db   = getFirestore(app);
 
-    // ★ 將帳號名稱轉成合法 email（Firebase 需要 email 格式）
+    // ★ 將帳號名稱轉成合法 email
     function usernameToEmail(username) {
-        // 將中文及特殊字元做簡單編碼，確保產生合法 email
         const encoded = encodeURIComponent(username).replace(/%/g, '_');
         return encoded + '@school.local';
     }
 
-    let currentUser    = null;
-    let currentRole    = null;
-    let currentUsername = null; // ★ 儲存顯示用的帳號名稱
-    let assignedClass  = null;
-    let adminUID       = null;
-    let draggedElement = null;
-    let isRegisterMode = false;
+    let currentUser     = null;
+    let currentRole     = null;
+    let currentUsername = null;
+    let assignedClass   = null;
+    let mainAdminUID    = null;   // ★ 改名：固定指向「主管理者」的 UID
+    let mainAdminName   = null;   // ★ 新增：主管理者顯示名稱
+    let draggedElement  = null;
+    let isRegisterMode  = false;
 
     const gridEl = document.getElementById('grid');
 
@@ -443,18 +469,16 @@
         if (password.length < 6) return alert('密碼至少需要 6 碼');
 
         const email = usernameToEmail(username);
-
         try {
             if (isRegisterMode) {
                 await createUserWithEmailAndPassword(auth, email, password);
-                // 儲存帳號對應的顯示名稱
                 await setDoc(doc(db, 'usernames', email), { displayName: username });
                 showToast('✅ 註冊成功！');
             } else {
                 await signInWithEmailAndPassword(auth, email, password);
             }
         } catch (e) {
-            if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+            if (['auth/user-not-found','auth/wrong-password','auth/invalid-credential'].includes(e.code)) {
                 alert('帳號或密碼錯誤，請重新確認。');
             } else {
                 alert('認證失敗：' + e.message);
@@ -463,57 +487,45 @@
     };
 
     window.handleLogout  = () => signOut(auth);
-   window.toggleAuthMode = () => {
-    isRegisterMode = !isRegisterMode;
-    document.getElementById('auth-title').innerText       = isRegisterMode ? '教師帳號註冊'      : '考試座位管理系統';
-    document.getElementById('auth-sub').innerText         = isRegisterMode ? '填寫資料後完成註冊'   : '請輸入帳號與密碼登入';
-    document.getElementById('auth-switch-text').innerText = isRegisterMode ? '已有帳號？點此登入'  : '還沒有帳號？點此註冊';
-    document.getElementById('auth-hint').innerText        = '💡 帳號可使用中文姓名，密碼請設定英數組合（至少6碼）';
-    // ★ 新增這行：切換按鈕文字
-    document.querySelector('.btn-auth').innerText         = isRegisterMode ? '✅ 確定註冊' : '🔐 登入系統';
-};
+
+    window.toggleAuthMode = () => {
+        isRegisterMode = !isRegisterMode;
+        document.getElementById('auth-title').innerText       = isRegisterMode ? '教師帳號註冊'    : '考試座位管理系統';
+        document.getElementById('auth-sub').innerText         = isRegisterMode ? '填寫資料後完成註冊' : '請輸入帳號與密碼登入';
+        document.getElementById('auth-switch-text').innerText = isRegisterMode ? '已有帳號？點此登入' : '還沒有帳號？點此註冊';
+        // ★ 修正：切換按鈕文字
+        document.getElementById('btn-auth-action').innerHTML  = isRegisterMode ? '✅ 確定註冊' : '🔐 登入系統';
+    };
+
     /* ════ 登入監聽 ════ */
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             currentUser = user;
             document.getElementById('auth-overlay').classList.add('hidden');
 
-            // 取得顯示名稱
+            // ★ 取得中文顯示名稱
             try {
                 const nameDoc = await getDoc(doc(db, 'usernames', user.email));
                 currentUsername = nameDoc.exists() ? nameDoc.data().displayName : user.email;
             } catch(e) {
                 currentUsername = user.email;
             }
-            document.getElementById('user-display').innerText = currentUsername;
 
-            // 讀取角色（用 email 當 key 不變）
+            // ★ 正確顯示中文名稱（不再顯示亂碼 email）
+            document.getElementById('user-display-name').innerText = currentUsername;
+
+            // 讀取角色
             const roleDoc = await getDoc(doc(db, 'roles', user.email));
             if (roleDoc.exists()) {
                 currentRole   = roleDoc.data().role;
                 assignedClass = roleDoc.data().class || null;
             } else {
+                // 第一個登入的人自動成為主管理者
                 currentRole = 'admin';
             }
 
-            if (currentRole === 'admin') {
-                adminUID = user.uid;
-                await setDoc(doc(db, 'roles', user.email),
-                    { role: 'admin', uid: user.uid }, { merge: true });
-            } else {
-                try {
-                    const snap = await getDocs(
-                        query(collection(db, 'roles'), where('role', '==', 'admin'))
-                    );
-                    if (!snap.empty && snap.docs[0].data().uid) {
-                        adminUID = snap.docs[0].data().uid;
-                    } else {
-                        adminUID = user.uid;
-                    }
-                } catch (e) {
-                    adminUID = user.uid;
-                }
-            }
+            // ★ 核心修改：找到主管理者 UID（isMainAdmin: true 的那一個）
+            await resolveMainAdminUID(user);
 
             applyRoleUI();
             initGrid();
@@ -524,11 +536,59 @@
             }
         } else {
             currentUser = null; currentRole = null;
-            currentUsername = null; assignedClass = null; adminUID = null;
+            currentUsername = null; assignedClass = null;
+            mainAdminUID = null; mainAdminName = null;
             document.getElementById('auth-overlay').classList.remove('hidden');
+            document.getElementById('user-display-name').innerText = '未登入';
+            document.getElementById('user-sub-info').innerText = '';
             gridEl.innerHTML = '';
         }
     });
+
+    /* ★ 新增：解析主管理者 UID 的函式 */
+    async function resolveMainAdminUID(user) {
+        try {
+            const snap = await getDocs(query(collection(db, 'roles'), where('isMainAdmin', '==', true)));
+
+            if (!snap.empty) {
+                // 已存在主管理者
+                const mainAdminDoc = snap.docs[0];
+                mainAdminUID  = mainAdminDoc.data().uid;
+                const mainEmail = mainAdminDoc.id;
+
+                // 取得主管理者的顯示名稱
+                try {
+                    const nd = await getDoc(doc(db, 'usernames', mainEmail));
+                    mainAdminName = nd.exists() ? nd.data().displayName : mainEmail;
+                } catch(e) { mainAdminName = mainEmail; }
+
+                if (currentRole === 'admin') {
+                    // 將自己也儲存為 admin（但非主管理者）
+                    await setDoc(doc(db, 'roles', user.email),
+                        { role: 'admin', uid: user.uid }, { merge: true });
+
+                    // 副管理者提示
+                    if (mainAdminUID !== user.uid) {
+                        document.getElementById('user-sub-info').innerText = `共用 ${mainAdminName} 的資料庫`;
+                    } else {
+                        document.getElementById('user-sub-info').innerText = '主管理者';
+                    }
+                }
+            } else {
+                // 第一個管理者 → 設為主管理者
+                mainAdminUID  = user.uid;
+                mainAdminName = currentUsername;
+                await setDoc(doc(db, 'roles', user.email),
+                    { role: 'admin', uid: user.uid, isMainAdmin: true }, { merge: true });
+                document.getElementById('user-sub-info').innerText = '主管理者';
+                showToast('🎉 您已成為主管理者，資料庫由您建立', 4000);
+            }
+        } catch(e) {
+            console.error('resolveMainAdminUID 失敗', e);
+            mainAdminUID = user.uid;
+            mainAdminName = currentUsername;
+        }
+    }
 
     /* ════ 角色 UI ════ */
     function applyRoleUI() {
@@ -543,16 +603,28 @@
         document.getElementById('admin-setup-panel').classList.toggle('visible', isAdmin);
         document.getElementById('notif-panel').style.display   = isAdmin ? '' : 'none';
 
-        if (!isAdmin) showToast(`👨‍🏫 導師帳號，只能微調 ${assignedClass || ''} 的座位`, 4000);
+        // ★ 顯示共用資料庫資訊
+        if (isAdmin && mainAdminName) {
+            const infoEl = document.getElementById('main-admin-info');
+            const nameEl = document.getElementById('main-admin-name-display');
+            infoEl.style.display = '';
+            nameEl.innerText = `所有管理者共用「${mainAdminName}」建立的班級資料`;
+        }
+
+        if (!isAdmin) {
+            document.getElementById('user-sub-info').innerText = `負責班級：${assignedClass || '未指派'}`;
+            showToast(`👨‍🏫 導師帳號，只能微調 ${assignedClass || ''} 的座位`, 4000);
+        }
     }
 
     /* ════ 班級清單 ════ */
     async function refreshClassList() {
-        if (!currentUser || !adminUID) return;
+        if (!currentUser || !mainAdminUID) return;
         const dropdown = document.getElementById('classDropdown');
         dropdown.innerHTML = '<option value="">-- 讀取中... --</option>';
         try {
-            const snap = await getDocs(collection(db, 'users', adminUID, 'classes'));
+            // ★ 所有人都讀主管理者路徑的班級
+            const snap = await getDocs(collection(db, 'users', mainAdminUID, 'classes'));
             dropdown.innerHTML = '<option value="">-- 請選擇班級 --</option>';
 
             const setupSel = document.getElementById('setup-class');
@@ -583,7 +655,6 @@
         const snap = await getDocs(collection(db, 'roles'));
         for (const d of snap.docs) {
             if (d.data().role === 'admin') continue;
-            // 取得顯示名稱
             let displayName = d.id;
             try {
                 const nd = await getDoc(doc(db, 'usernames', d.id));
@@ -606,7 +677,6 @@
         if (!username || !cls) return alert('請填寫帳號並選擇班級');
         const email = usernameToEmail(username);
         await setDoc(doc(db, 'roles', email), { role: 'teacher', class: cls, uid: '' });
-        // 儲存顯示名稱
         await setDoc(doc(db, 'usernames', email), { displayName: username }, { merge: true });
         showToast(`✅ 已指派 ${username} 管理 ${cls}`);
         document.getElementById('setup-username').value = '';
@@ -615,7 +685,7 @@
     };
 
     window.removeTeacher = async (email) => {
-        if (!confirm(`確定要移除此導師的權限？`)) return;
+        if (!confirm('確定要移除此導師的權限？')) return;
         await deleteDoc(doc(db, 'roles', email));
         showToast('🗑️ 已移除');
         await loadAdminRoleList();
@@ -682,7 +752,7 @@
     };
 
     window.saveToCloud = async () => {
-        if (!currentUser || !adminUID) return;
+        if (!currentUser || !mainAdminUID) return;
         const classTitle = document.getElementById('classTitle').value.trim();
         if (!classTitle) return alert('請輸入班級名稱');
         const seatData = Array.from(document.querySelectorAll('.seat')).map(seat => ({
@@ -690,7 +760,8 @@
             isFixed: seat.classList.contains('is-fixed')
         }));
         try {
-            await setDoc(doc(db, 'users', adminUID, 'classes', classTitle), {
+            // ★ 所有人都寫入主管理者路徑（共用資料庫）
+            await setDoc(doc(db, 'users', mainAdminUID, 'classes', classTitle), {
                 cols: document.getElementById('cols').value,
                 rows: document.getElementById('rows').value,
                 rawList: document.getElementById('studentList').value,
@@ -701,16 +772,17 @@
                 await sendNotification(classTitle);
                 showToast('☁️ 已儲存並通知管理者');
             } else {
-                showToast('☁️ 已成功同步至雲端');
+                showToast('☁️ 已成功同步至共用雲端');
                 await refreshClassList();
             }
         } catch (e) { alert('儲存失敗：' + e.message); }
     };
 
     async function loadSpecificClass() {
-        if (!adminUID) return;
+        if (!mainAdminUID) return;
         const classTitle = document.getElementById('classTitle').value;
-        const docSnap = await getDoc(doc(db, 'users', adminUID, 'classes', classTitle));
+        // ★ 從主管理者路徑讀取
+        const docSnap = await getDoc(doc(db, 'users', mainAdminUID, 'classes', classTitle));
         if (docSnap.exists()) {
             const data = docSnap.data();
             if (currentRole === 'admin') {
