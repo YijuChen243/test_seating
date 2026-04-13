@@ -160,8 +160,9 @@
             border-radius: 10px; display: flex;
             flex-direction: column; align-items: center;
             justify-content: center; background: #fff;
-            cursor: grab; position: relative;
+            cursor: pointer; position: relative;
             transition: all 0.18s ease;
+            user-select: none;
         }
         .seat.is-fixed { background: var(--fixed); border-color: var(--fixed-border); }
         .student-name { font-size: 1.2rem; font-weight: 700; pointer-events: none; }
@@ -291,11 +292,9 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // --- 核心邏輯：中文帳號轉 Email ---
     function usernameToEmail(username) {
         const clean = username.trim();
-        if(!clean) return null;
-        return `${clean}@school.local`;
+        return clean ? `${clean}@school.local` : null;
     }
 
     let currentUser = null;
@@ -305,7 +304,6 @@
     let mainAdminName = "";
     let isRegisterMode = false;
 
-    // --- UI 輔助 ---
     function showToast(msg) {
         const t = document.getElementById('toast');
         t.textContent = msg; t.classList.add('show');
@@ -319,66 +317,54 @@
         document.getElementById('auth-switch-text').innerText = isRegisterMode ? "已有帳號？點此登入" : "還沒有帳號？點此註冊";
     };
 
-    // --- 認證處理 ---
     window.handleAuth = async () => {
         const userIn = document.getElementById('auth-username').value.trim();
         const passIn = document.getElementById('auth-password').value;
         if(!userIn || !passIn) return alert('請完整輸入帳號與密碼');
         const email = usernameToEmail(userIn);
-
         try {
             if(isRegisterMode) {
-                const cred = await createUserWithEmailAndPassword(auth, email, passIn);
+                await createUserWithEmailAndPassword(auth, email, passIn);
                 await setDoc(doc(db, 'usernames', email), { displayName: userIn });
                 showToast('註冊成功！');
             } else {
                 await signInWithEmailAndPassword(auth, email, passIn);
             }
-        } catch(e) {
-            alert('操作失敗：' + e.message);
-        }
+        } catch(e) { alert('操作失敗：' + e.message); }
     };
 
     window.handleLogout = () => signOut(auth);
 
-    // --- 權限與資料庫初始化 ---
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             currentUser = user;
             document.getElementById('auth-overlay').classList.add('hidden');
-            
-            // 1. 取得中文姓名
             const nameDoc = await getDoc(doc(db, 'usernames', user.email));
             currentUsername = nameDoc.exists() ? nameDoc.data().displayName : user.email.split('@')[0];
             document.getElementById('user-display-name').innerText = currentUsername;
 
-            // 2. 判斷角色
             let roleDoc = await getDoc(doc(db, 'roles', user.email));
             if(!roleDoc.exists()){
-                // 檢查是否為第一個使用者
                 const allRoles = await getDocs(collection(db, 'roles'));
                 if(allRoles.empty){
                     await setDoc(doc(db, 'roles', user.email), { role: 'admin', isMainAdmin: true, uid: user.uid });
-                    roleDoc = await getDoc(doc(db, 'roles', user.email));
                 } else {
                     await setDoc(doc(db, 'roles', user.email), { role: 'teacher', uid: user.uid, class: '' });
-                    roleDoc = await getDoc(doc(db, 'roles', user.email));
                 }
+                roleDoc = await getDoc(doc(db, 'roles', user.email));
             }
             
             currentRole = roleDoc.data().role;
             const assignedClass = roleDoc.data().class || "";
 
-            // 3. 找出主管理者
             const mainSnap = await getDocs(query(collection(db, 'roles'), where('isMainAdmin', '==', true)));
             if(!mainSnap.empty){
                 const mainData = mainSnap.docs[0].data();
                 mainAdminUID = mainData.uid;
-                const mainNameDoc = await getDoc(doc(db, 'usernames', mainSnap.docs[0].id));
-                mainAdminName = mainNameDoc.exists() ? mainNameDoc.data().displayName : "管理者";
+                const mnd = await getDoc(doc(db, 'usernames', mainSnap.docs[0].id));
+                mainAdminName = mnd.exists() ? mnd.data().displayName : "管理者";
             } else {
-                mainAdminUID = user.uid;
-                mainAdminName = currentUsername;
+                mainAdminUID = user.uid; mainAdminName = currentUsername;
             }
 
             applyUI(assignedClass);
@@ -394,23 +380,21 @@
         const badge = document.getElementById('role-badge');
         badge.innerText = isAdmin ? "🛡️ 管理者" : "👨‍🏫 導師";
         badge.className = "role-badge " + (isAdmin ? "admin" : "teacher");
-        
         document.getElementById('admin-setup-panel').style.display = isAdmin ? 'block' : 'none';
         document.getElementById('layout-group').style.display = isAdmin ? 'block' : 'none';
         document.getElementById('shuffle-group').style.display = isAdmin ? 'block' : 'none';
         document.getElementById('btn-new').style.display = isAdmin ? 'block' : 'none';
-        
-        if(isAdmin) {
-            document.getElementById('main-admin-info').innerText = `目前共用「${mainAdminName}」的資料庫`;
-        } else {
-            document.getElementById('user-sub-info').innerText = `管理班級：${assignedClass || '未分配'}`;
-        }
+        if(isAdmin) document.getElementById('main-admin-info').innerText = `目前共用「${mainAdminName}」的資料庫`;
+        else document.getElementById('user-sub-info').innerText = `管理班級：${assignedClass || '未分配'}`;
     }
 
-    // --- 座位功能 (簡化邏輯) ---
     window.syncTitle = () => {
-        const t = document.getElementById('classTitle').value;
-        document.getElementById('class-title-display').innerText = t || "請輸入班級名稱";
+        document.getElementById('class-title-display').innerText = document.getElementById('classTitle').value || "請輸入班級名稱";
+    };
+
+    window.confirmInit = () => {
+        if(!confirm('確定要重新佈局嗎？這將會清除目前的座位安排。')) return;
+        initGrid();
     };
 
     window.initGrid = () => {
@@ -419,9 +403,7 @@
         const grid = document.getElementById('grid');
         grid.style.gridTemplateColumns = `repeat(${c}, 120px)`;
         grid.innerHTML = '';
-        for(let i=0; i<c*r; i++) {
-            grid.appendChild(createSeat("", false));
-        }
+        for(let i=0; i<c*r; i++) grid.appendChild(createSeat("", false));
     };
 
     function createSeat(name, fixed) {
@@ -432,17 +414,14 @@
             if(currentRole !== 'admin') return;
             div.classList.toggle('is-fixed');
         };
-        // 簡易拖拽實作略...
         return div;
     }
 
-    // --- 雲端操作 ---
     async function refreshClassList() {
         const drop = document.getElementById('classDropdown');
         const setupDrop = document.getElementById('setup-class');
         drop.innerHTML = '<option value="">-- 選擇班級 --</option>';
         setupDrop.innerHTML = '<option value="">選擇班級</option>';
-        
         const snap = await getDocs(collection(db, 'users', mainAdminUID, 'classes'));
         snap.forEach(d => {
             const opt = document.createElement('option');
@@ -452,27 +431,28 @@
         });
     }
 
+    window.createNewClass = () => {
+        document.getElementById('classTitle').value = "";
+        document.getElementById('studentList').value = "";
+        document.getElementById('class-remarks').value = "";
+        syncTitle();
+        initGrid();
+        showToast('已準備好建立新班級');
+    };
+
     window.saveToCloud = async () => {
         const title = document.getElementById('classTitle').value.trim();
         if(!title) return alert('請輸入班級名稱');
-        
-        const seats = [];
-        document.querySelectorAll('.seat').forEach(s => {
-            seats.push({
-                name: s.querySelector('.student-name').innerText,
-                fixed: s.classList.contains('is-fixed')
-            });
-        });
-
-        const data = {
+        const seats = Array.from(document.querySelectorAll('.seat')).map(s => ({
+            name: s.querySelector('.student-name').innerText,
+            fixed: s.classList.contains('is-fixed')
+        }));
+        await setDoc(doc(db, 'users', mainAdminUID, 'classes', title), {
             cols: document.getElementById('cols').value,
             rows: document.getElementById('rows').value,
             remarks: document.getElementById('class-remarks').value,
-            seats: seats,
-            editor: currentUsername
-        };
-
-        await setDoc(doc(db, 'users', mainAdminUID, 'classes', title), data);
+            seats, editor: currentUsername
+        });
         showToast('✅ 儲存成功');
         refreshClassList();
     };
@@ -488,15 +468,50 @@
             document.getElementById('rows').value = data.rows;
             document.getElementById('class-remarks').value = data.remarks || "";
             syncTitle();
-            
             const grid = document.getElementById('grid');
             grid.style.gridTemplateColumns = `repeat(${data.cols}, 120px)`;
             grid.innerHTML = '';
             data.seats.forEach(s => grid.appendChild(createSeat(s.name, s.fixed)));
         }
     };
-    
-    // 指派權限
+
+    window.shuffleNonFixed = () => {
+        const students = document.getElementById('studentList').value.split('\n').map(s => s.trim()).filter(s => s);
+        if(!students.length) return alert('請輸入學生名單');
+        const seats = Array.from(document.querySelectorAll('.seat'));
+        const nonFixedSeats = seats.filter(s => !s.classList.contains('is-fixed'));
+        if(students.length > nonFixedSeats.length) return alert('學生人數大於可用位置數');
+        
+        nonFixedSeats.forEach(s => s.querySelector('.student-name').innerText = "");
+        const shuffled = [...students].sort(() => Math.random() - 0.5);
+        shuffled.forEach((name, i) => {
+            nonFixedSeats[i].querySelector('.student-name').innerText = name;
+        });
+        showToast('🎲 隨機排列完成');
+    };
+
+    window.downloadImage = () => {
+        html2canvas(document.getElementById('capture-area')).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `座位表_${document.getElementById('classTitle').value || '未命名'}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+    };
+
+    window.downloadPDF = () => {
+        html2canvas(document.getElementById('capture-area'), { scale: 2 }).then(canvas => {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('l', 'mm', 'a4');
+            const imgData = canvas.toDataURL('image/png');
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            const ratio = Math.min(pageWidth / (canvas.width / 2), pageHeight / (canvas.height / 2));
+            pdf.addImage(imgData, 'PNG', 10, 10, (canvas.width / 2) * ratio - 20, (canvas.height / 2) * ratio - 20);
+            pdf.save(`座位表_${document.getElementById('classTitle').value || '未命名'}.pdf`);
+        });
+    };
+
     window.assignTeacher = async () => {
         const name = document.getElementById('setup-username').value.trim();
         const cls = document.getElementById('setup-class').value;
@@ -506,7 +521,6 @@
         await setDoc(doc(db, 'usernames', email), { displayName: name }, { merge: true });
         showToast(`已指派 ${name} 管理 ${cls}`);
     };
-
 </script>
 </body>
 </html>
