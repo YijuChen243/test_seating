@@ -34,7 +34,6 @@
             color: var(--text);
         }
 
-        /* ─── 側邊欄 ─── */
         .sidebar {
             width: var(--sidebar-w);
             background: var(--surface);
@@ -102,7 +101,6 @@
         }
         textarea { height: 120px; resize: vertical; }
 
-        /* ─── 按鈕 ─── */
         button {
             width: 100%; padding: 11px 14px;
             margin-bottom: 8px; border: none;
@@ -127,7 +125,6 @@
         .btn-row { display: flex; gap: 8px; margin-bottom: 0; }
         .btn-row button { margin-bottom: 0; }
 
-        /* ─── 通知面板（管理者專用）─── */
         #notif-panel {
             background: var(--notif-bg);
             border: 1.5px solid var(--notif-border);
@@ -155,7 +152,6 @@
             font-size: 13px; padding: 8px; margin-bottom: 0;
         }
 
-        /* ─── 主畫面 ─── */
         .main-content {
             flex-grow: 1; display: flex;
             align-items: flex-start; justify-content: center;
@@ -201,7 +197,6 @@
         .student-name { font-size: 1.3rem; font-weight: 700; pointer-events: none; color: var(--text); }
         .lock-icon { position: absolute; top: 5px; right: 8px; font-size: 13px; pointer-events: none; }
 
-        /* 備註區 */
         .remarks-area {
             margin-top: 36px; padding: 18px;
             background: #f8fafc; border: 2px dashed var(--border);
@@ -214,7 +209,6 @@
             font-family: inherit; color: var(--text); line-height: 1.7;
         }
 
-        /* ─── 登入畫面 ─── */
         #auth-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(15,23,42,0.88);
@@ -246,7 +240,6 @@
             cursor: pointer; text-decoration: underline; font-weight: 600;
         }
 
-        /* ─── 管理者設定面板 ─── */
         #admin-setup-panel {
             background: #fdf4ff; border: 1.5px solid #d8b4fe;
             border-radius: 12px; padding: 14px; display: none;
@@ -275,7 +268,6 @@
         .role-item .ri-class { color: var(--purple); font-size: 12px; font-weight: 700; }
         .role-item .ri-del { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 16px; width: auto; padding: 0 4px; margin: 0; }
 
-        /* ─── Toast ─── */
         #toast {
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px);
             background: #1e293b; color: white; padding: 12px 24px;
@@ -285,7 +277,6 @@
         }
         #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-        /* ─── RWD ─── */
         @media (max-width: 800px) {
             body { flex-direction: column; height: auto; overflow-y: auto; }
             .sidebar { width: 100%; }
@@ -299,7 +290,6 @@
 </head>
 <body>
 
-<!-- ═══════════ 登入畫面 ═══════════ -->
 <div id="auth-overlay">
     <div class="auth-box">
         <div class="auth-logo">🏫</div>
@@ -318,7 +308,6 @@
     </div>
 </div>
 
-<!-- ═══════════ 側邊欄 ═══════════ -->
 <div class="sidebar">
     <div class="sidebar-header">
         <div class="role-badge" id="role-badge">⏳ 讀取中</div>
@@ -327,36 +316,27 @@
 
     <div class="sidebar-body">
 
-        <!-- 通知面板（管理者） -->
         <div id="notif-panel">
             <h3>🔔 導師調整通知 <span class="notif-badge" id="notif-count">0</span></h3>
             <div id="notif-list"></div>
             <button id="btn-clear-notif" onclick="clearNotifications()">✅ 全部標為已讀</button>
         </div>
 
-        <!-- 管理者設定面板 -->
         <div id="admin-setup-panel">
             <h3>👤 管理導師帳號權限</h3>
             <div class="setup-row">
                 <input type="email" id="setup-email" placeholder="導師 Email">
-                <select id="setup-class">
-                    <option value="">選擇班級</option>
-                </select>
+                <select id="setup-class"><option value="">選擇班級</option></select>
                 <button onclick="assignTeacher()">＋指派</button>
             </div>
             <div class="role-list" id="role-list"></div>
         </div>
 
-        <!-- 班級管理 -->
         <div class="config-group">
             <h3>🗂️ 班級檔案管理</h3>
             <button class="btn-new" id="btn-new" onclick="createNewClass()">➕ 建立新班級</button>
-
             <label>選擇班級</label>
-            <select id="classDropdown">
-                <option value="">-- 讀取中... --</option>
-            </select>
-
+            <select id="classDropdown"><option value="">-- 請選擇班級 --</option></select>
             <div class="btn-row">
                 <button class="btn-load" onclick="loadFromDropdown()">📂 載入</button>
                 <button class="btn-cloud" onclick="saveToCloud()">☁️ 儲存</button>
@@ -367,7 +347,6 @@
             </div>
         </div>
 
-        <!-- 教室配置（管理者） -->
         <div class="config-group" id="layout-group">
             <h3>✏️ 教室配置</h3>
             <label>班級名稱</label>
@@ -379,7 +358,6 @@
             <button class="btn-init" onclick="confirmInit()">🔄 重新佈局（清空座位）</button>
         </div>
 
-        <!-- 抽籤（管理者） -->
         <div class="config-group" id="shuffle-group">
             <h3>🎲 學生抽籤</h3>
             <textarea id="studentList" placeholder="每行輸入一位學生姓名..."></textarea>
@@ -392,7 +370,6 @@
     </div>
 </div>
 
-<!-- ═══════════ 主畫面 ═══════════ -->
 <div class="main-content">
     <div id="capture-area">
         <h1 id="class-title-display">請輸入班級名稱</h1>
@@ -405,43 +382,39 @@
     </div>
 </div>
 
-<!-- Toast -->
 <div id="toast"></div>
 
-<!-- ═══════════ Firebase ═══════════ -->
 <script type="module">
-    import { initializeApp }                              from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { initializeApp }
+        from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut }
-                                                          from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+        from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
     import { getFirestore, doc, setDoc, getDoc, getDocs, deleteDoc, collection, query, where, orderBy, updateDoc, addDoc, serverTimestamp }
-                                                          from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-    /* ── Firebase 設定（請勿更改） ── */
-  const firebaseConfig = {
-    apiKey: "AIzaSyBMfrzpvb3YO_O8DOBiIEghmp27UNC7ZL4",
-    authDomain: "examseating-859ae.firebaseapp.com",
-    projectId: "examseating-859ae",
-    storageBucket: "examseating-859ae.firebasestorage.app",
-    messagingSenderId: "547686235744",
-    appId: "1:547686235744:web:ba1b0032c43267ce340d05"
-  };
+    // ▼ 您的 Firebase 設定（請勿更改）▼
+    const firebaseConfig = {
+        apiKey: "AIzaSyBMfrzpvb3YO_O8DOBiIEghmp27UNC7ZL4",
+        authDomain: "examseating-859ae.firebaseapp.com",
+        projectId: "examseating-859ae",
+        storageBucket: "examseating-859ae.firebasestorage.app",
+        messagingSenderId: "547686235744",
+        appId: "1:547686235744:web:ba1b0032c43267ce340d05"
+    };
 
     const app  = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db   = getFirestore(app);
 
-    /* ── 全域狀態 ── */
-    let currentUser = null;
-    let currentRole = null;   // "admin" | "teacher"
-    let assignedClass = null; // 導師被指派的班級名稱
+    let currentUser    = null;
+    let currentRole    = null;
+    let assignedClass  = null;
+    let adminUID       = null;   // ★ 全域快取，整個 session 只查一次
     let draggedElement = null;
     let isRegisterMode = false;
 
     const gridEl = document.getElementById('grid');
 
-    /* ════════════════════════════════
-       工具：Toast 通知
-    ════════════════════════════════ */
     function showToast(msg, duration = 2500) {
         const t = document.getElementById('toast');
         t.textContent = msg;
@@ -449,9 +422,7 @@
         setTimeout(() => t.classList.remove('show'), duration);
     }
 
-    /* ════════════════════════════════
-       認證
-    ════════════════════════════════ */
+    /* ════ 認證 ════ */
     window.handleAuth = async () => {
         const email    = document.getElementById('auth-email').value.trim();
         const password = document.getElementById('auth-password').value;
@@ -463,41 +434,56 @@
             } else {
                 await signInWithEmailAndPassword(auth, email, password);
             }
-        } catch (e) {
-            alert('認證失敗，請檢查帳號密碼或網路連線。\n' + e.message);
-        }
+        } catch (e) { alert('認證失敗，請檢查帳號密碼。\n' + e.message); }
     };
 
-    window.handleLogout = () => signOut(auth);
-
+    window.handleLogout  = () => signOut(auth);
     window.toggleAuthMode = () => {
         isRegisterMode = !isRegisterMode;
-        document.getElementById('auth-title').innerText = isRegisterMode ? '教師帳號註冊' : '教室座位管理系統';
-        document.getElementById('auth-sub').innerText   = isRegisterMode ? '填寫資料後完成註冊' : '請使用教師帳號登入';
-        document.getElementById('btn-auth-main') && (document.getElementById('btn-auth-main').innerText = isRegisterMode ? '立即註冊' : '🔐 登入系統');
+        document.getElementById('auth-title').innerText      = isRegisterMode ? '教師帳號註冊'     : '考試座位管理系統';
+        document.getElementById('auth-sub').innerText        = isRegisterMode ? '填寫資料後完成註冊'  : '請使用教師帳號登入';
         document.getElementById('auth-switch-text').innerText = isRegisterMode ? '已有帳號？點此登入' : '還沒有帳號？點此註冊';
     };
 
-    /* ════════════════════════════════
-       登入狀態監聽
-    ════════════════════════════════ */
+    /* ════ 登入監聽 ════ */
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             currentUser = user;
             document.getElementById('auth-overlay').classList.add('hidden');
             document.getElementById('user-display').innerText = user.email;
 
-            // 讀取角色
+            // 1. 讀取角色
             const roleDoc = await getDoc(doc(db, 'roles', user.email));
             if (roleDoc.exists()) {
-                const data = roleDoc.data();
-                currentRole   = data.role;
-                assignedClass = data.class || null;
+                currentRole   = roleDoc.data().role;
+                assignedClass = roleDoc.data().class || null;
             } else {
-                // 預設為 admin（第一位使用者）
                 currentRole = 'admin';
             }
 
+            // 2. ★ 決定並快取 adminUID（整個 session 只做一次）
+            if (currentRole === 'admin') {
+                adminUID = user.uid;
+                // 把自己的 uid 寫回 roles，讓導師之後能查到
+                await setDoc(doc(db, 'roles', user.email),
+                    { role: 'admin', uid: user.uid }, { merge: true });
+            } else {
+                // 導師：去 roles 找 admin 的 uid
+                try {
+                    const snap = await getDocs(
+                        query(collection(db, 'roles'), where('role', '==', 'admin'))
+                    );
+                    if (!snap.empty && snap.docs[0].data().uid) {
+                        adminUID = snap.docs[0].data().uid;
+                    } else {
+                        adminUID = user.uid; // fallback
+                    }
+                } catch (e) {
+                    adminUID = user.uid;
+                }
+            }
+
+            // 3. 套用 UI、初始化
             applyRoleUI();
             initGrid();
             await refreshClassList();
@@ -506,86 +492,61 @@
                 await loadNotifications();
             }
         } else {
-            currentUser = null;
-            currentRole = null;
-            assignedClass = null;
+            currentUser = null; currentRole = null;
+            assignedClass = null; adminUID = null;
             document.getElementById('auth-overlay').classList.remove('hidden');
             gridEl.innerHTML = '';
         }
     });
 
-    /* ════════════════════════════════
-       套用角色 UI
-    ════════════════════════════════ */
+    /* ════ 角色 UI ════ */
     function applyRoleUI() {
         const isAdmin = currentRole === 'admin';
         const badge   = document.getElementById('role-badge');
         badge.textContent = isAdmin ? '🛡️ 管理者' : '👨‍🏫 導師';
         badge.className   = 'role-badge ' + (isAdmin ? 'admin' : 'teacher');
 
-        // 管理者功能
         document.getElementById('btn-new').style.display       = isAdmin ? '' : 'none';
         document.getElementById('layout-group').style.display  = isAdmin ? '' : 'none';
         document.getElementById('shuffle-group').style.display = isAdmin ? '' : 'none';
         document.getElementById('admin-setup-panel').classList.toggle('visible', isAdmin);
         document.getElementById('notif-panel').style.display   = isAdmin ? '' : 'none';
 
-        // 導師提示
-        if (!isAdmin) {
-            showToast(`👨‍🏫 您是導師帳號，只能微調 ${assignedClass || ''} 的座位`, 4000);
-        }
+        if (!isAdmin) showToast(`👨‍🏫 導師帳號，只能微調 ${assignedClass || ''} 的座位`, 4000);
     }
 
-    /* ════════════════════════════════
-       班級清單（下拉）
-    ════════════════════════════════ */
+    /* ════ ★ 班級清單（直接用快取的 adminUID）════ */
     async function refreshClassList() {
-        if (!currentUser) return;
+        if (!currentUser || !adminUID) return;
         const dropdown = document.getElementById('classDropdown');
         dropdown.innerHTML = '<option value="">-- 讀取中... --</option>';
         try {
-            const snap = await getDocs(collection(db, 'users', getAdminUID(), 'classes'));
+            const snap = await getDocs(collection(db, 'users', adminUID, 'classes'));
             dropdown.innerHTML = '<option value="">-- 請選擇班級 --</option>';
 
-            // 填入管理者設定面板的班級選單
             const setupSel = document.getElementById('setup-class');
             setupSel.innerHTML = '<option value="">選擇班級</option>';
 
+            if (snap.empty) {
+                dropdown.innerHTML = '<option value="">（尚無班級，請建立）</option>';
+                return;
+            }
+
             snap.forEach(d => {
+                if (currentRole === 'teacher' && d.id !== assignedClass) return;
                 const opt = document.createElement('option');
                 opt.value = d.id; opt.textContent = d.id;
-                // 導師只顯示自己的班
-                if (currentRole === 'teacher' && d.id !== assignedClass) return;
                 dropdown.appendChild(opt);
-
-                const opt2 = opt.cloneNode(true);
-                setupSel.appendChild(opt2);
+                setupSel.appendChild(opt.cloneNode(true));
             });
-        } catch (e) { console.error('抓取班級失敗', e); }
+        } catch (e) {
+            console.error('讀取班級失敗', e);
+            dropdown.innerHTML = '<option value="">⚠️ 讀取失敗，請重新整理</option>';
+        }
     }
 
-    /* 取得 admin UID（從 roles 集合找）*/
-    async function getAdminUID() {
-        // 若自己是 admin，直接用自己的 UID
-        if (currentRole === 'admin') return currentUser.uid;
-        // 導師需要找 admin UID
-        try {
-            const snap = await getDocs(query(collection(db, 'roles'), where('role', '==', 'admin')));
-            if (!snap.empty) {
-                const adminEmail = snap.docs[0].id;
-                // 透過 adminEmail 找到 UID（存在 roles 裡）
-                const adminDoc = await getDoc(doc(db, 'roles', adminEmail));
-                return adminDoc.data().uid || currentUser.uid;
-            }
-        } catch (e) {}
-        return currentUser.uid;
-    }
-
-    /* ════════════════════════════════
-       管理者：指派導師班級
-    ════════════════════════════════ */
+    /* ════ 管理者：指派導師 ════ */
     async function loadAdminRoleList() {
-        if (currentRole !== 'admin') return;
         const list = document.getElementById('role-list');
         list.innerHTML = '';
         const snap = await getDocs(collection(db, 'roles'));
@@ -596,15 +557,14 @@
             item.innerHTML = `
                 <span class="ri-email" title="${d.id}">${d.id}</span>
                 <span class="ri-class">${d.data().class || '未指派'}</span>
-                <button class="ri-del" onclick="removeTeacher('${d.id}')">✕</button>
-            `;
+                <button class="ri-del" onclick="removeTeacher('${d.id}')">✕</button>`;
             list.appendChild(item);
         });
     }
 
     window.assignTeacher = async () => {
-        const email    = document.getElementById('setup-email').value.trim();
-        const cls      = document.getElementById('setup-class').value;
+        const email = document.getElementById('setup-email').value.trim();
+        const cls   = document.getElementById('setup-class').value;
         if (!email || !cls) return alert('請填寫 Email 並選擇班級');
         await setDoc(doc(db, 'roles', email), { role: 'teacher', class: cls, uid: '' });
         showToast(`✅ 已指派 ${email} 管理 ${cls}`);
@@ -620,35 +580,28 @@
         await loadAdminRoleList();
     };
 
-    /* ════════════════════════════════
-       通知系統
-    ════════════════════════════════ */
+    /* ════ 通知 ════ */
     async function loadNotifications() {
-        if (currentRole !== 'admin') return;
         const panel = document.getElementById('notif-panel');
         const list  = document.getElementById('notif-list');
         const badge = document.getElementById('notif-count');
         list.innerHTML = '';
-
         try {
             const snap = await getDocs(
                 query(collection(db, 'notifications'), where('status', '==', 'unread'), orderBy('changedAt', 'desc'))
             );
-            const count = snap.size;
-            badge.textContent = count;
-            panel.classList.toggle('visible', count > 0);
-
+            badge.textContent = snap.size;
+            panel.classList.toggle('visible', snap.size > 0);
             snap.forEach(d => {
                 const data = d.data();
-                const time = data.changedAt?.toDate?.() || new Date();
-                const fmt  = time.toLocaleString('zh-TW', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+                const fmt  = (data.changedAt?.toDate?.() || new Date())
+                    .toLocaleString('zh-TW', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
                 const item = document.createElement('div');
                 item.className = 'notif-item';
                 item.innerHTML = `
                     <div><span class="notif-class">【${data.class}】</span> 座位已調整</div>
                     <div class="notif-teacher">導師：${data.teacher}</div>
-                    <div class="notif-time">⏰ ${fmt}</div>
-                `;
+                    <div class="notif-time">⏰ ${fmt}</div>`;
                 list.appendChild(item);
             });
         } catch (e) { console.error('載入通知失敗', e); }
@@ -657,36 +610,26 @@
     async function sendNotification(className) {
         try {
             await addDoc(collection(db, 'notifications'), {
-                class: className,
-                teacher: currentUser.email,
-                changedAt: serverTimestamp(),
-                status: 'unread'
+                class: className, teacher: currentUser.email,
+                changedAt: serverTimestamp(), status: 'unread'
             });
         } catch (e) { console.error('通知寫入失敗', e); }
     }
 
     window.clearNotifications = async () => {
-        const snap = await getDocs(
-            query(collection(db, 'notifications'), where('status', '==', 'unread'))
-        );
-        const promises = snap.docs.map(d => updateDoc(d.ref, { status: 'read' }));
-        await Promise.all(promises);
+        const snap = await getDocs(query(collection(db, 'notifications'), where('status', '==', 'unread')));
+        await Promise.all(snap.docs.map(d => updateDoc(d.ref, { status: 'read' })));
         document.getElementById('notif-panel').classList.remove('visible');
         document.getElementById('notif-count').textContent = '0';
         document.getElementById('notif-list').innerHTML = '';
         showToast('✅ 已全部標為已讀');
     };
 
-    /* ════════════════════════════════
-       班級操作
-    ════════════════════════════════ */
+    /* ════ 班級操作 ════ */
     window.createNewClass = () => {
         if (!confirm('確定要建立新班級？目前未儲存內容將遺失。')) return;
-        document.getElementById('classTitle').value = '';
-        document.getElementById('studentList').value = '';
-        document.getElementById('class-remarks').value = '';
-        syncTitle();
-        initGrid();
+        ['classTitle','studentList','class-remarks'].forEach(id => document.getElementById(id).value = '');
+        syncTitle(); initGrid();
         document.getElementById('classTitle').focus();
     };
 
@@ -698,30 +641,21 @@
     };
 
     window.saveToCloud = async () => {
-        if (!currentUser) return;
+        if (!currentUser || !adminUID) return;
         const classTitle = document.getElementById('classTitle').value.trim();
         if (!classTitle) return alert('請輸入班級名稱');
-
-        const seatData = [];
-        document.querySelectorAll('.seat').forEach(seat => {
-            seatData.push({
-                name: seat.querySelector('.student-name').innerText,
-                isFixed: seat.classList.contains('is-fixed')
-            });
-        });
-
-        const targetUID = await getAdminUID();
-
+        const seatData = Array.from(document.querySelectorAll('.seat')).map(seat => ({
+            name: seat.querySelector('.student-name').innerText,
+            isFixed: seat.classList.contains('is-fixed')
+        }));
         try {
-            await setDoc(doc(db, 'users', targetUID, 'classes', classTitle), {
+            await setDoc(doc(db, 'users', adminUID, 'classes', classTitle), {
                 cols: document.getElementById('cols').value,
                 rows: document.getElementById('rows').value,
                 rawList: document.getElementById('studentList').value,
                 remarks: document.getElementById('class-remarks').value,
                 layout: seatData
             });
-
-            // 若是導師儲存，發送通知
             if (currentRole === 'teacher') {
                 await sendNotification(classTitle);
                 showToast('☁️ 已儲存並通知管理者');
@@ -729,39 +663,29 @@
                 showToast('☁️ 已成功同步至雲端');
                 await refreshClassList();
             }
-        } catch (e) {
-            alert('儲存失敗：' + e.message);
-        }
+        } catch (e) { alert('儲存失敗：' + e.message); }
     };
 
     async function loadSpecificClass() {
+        if (!adminUID) return;
         const classTitle = document.getElementById('classTitle').value;
-        const targetUID  = await getAdminUID();
-        const docSnap    = await getDoc(doc(db, 'users', targetUID, 'classes', classTitle));
+        const docSnap = await getDoc(doc(db, 'users', adminUID, 'classes', classTitle));
         if (docSnap.exists()) {
             const data = docSnap.data();
-            // 管理者才能改欄列
             if (currentRole === 'admin') {
                 document.getElementById('cols').value = data.cols;
                 document.getElementById('rows').value = data.rows;
                 document.getElementById('studentList').value = data.rawList || '';
             }
             document.getElementById('class-remarks').value = data.remarks || '';
-            syncTitle();
-            initGrid();
+            syncTitle(); initGrid();
             const seats = document.querySelectorAll('.seat');
-            (data.layout || []).forEach((sDat, i) => {
-                if (seats[i]) updateSeat(seats[i], sDat.name, sDat.isFixed);
-            });
+            (data.layout || []).forEach((s, i) => { if (seats[i]) updateSeat(seats[i], s.name, s.isFixed); });
             showToast(`📂 已載入 ${classTitle}`);
-        } else {
-            alert('找不到此班級資料');
-        }
+        } else { alert('找不到此班級資料'); }
     }
 
-    /* ════════════════════════════════
-       座位格
-    ════════════════════════════════ */
+    /* ════ 座位格 ════ */
     window.initGrid = function () {
         const c = parseInt(document.getElementById('cols').value) || 5;
         const r = parseInt(document.getElementById('rows').value) || 5;
@@ -772,25 +696,17 @@
             seat.className = 'seat empty';
             seat.draggable = true;
             seat.innerHTML = '<span class="student-name"></span>';
-
-            // 點擊編輯（管理者）
             seat.onclick = () => {
                 if (currentRole !== 'admin') return;
-                const old  = seat.querySelector('.student-name').innerText;
-                const name = prompt('編輯學生姓名：', old);
+                const name = prompt('編輯學生姓名：', seat.querySelector('.student-name').innerText);
                 if (name !== null) updateSeat(seat, name.trim(), name.trim() !== '');
             };
-
-            // 右鍵鎖定（管理者）
             seat.oncontextmenu = (e) => {
                 e.preventDefault();
-                if (currentRole !== 'admin') return;
-                if (!seat.classList.contains('empty')) {
-                    seat.classList.toggle('is-fixed');
-                    updateLockIcon(seat);
-                }
+                if (currentRole !== 'admin' || seat.classList.contains('empty')) return;
+                seat.classList.toggle('is-fixed');
+                updateLockIcon(seat);
             };
-
             setupDnD(seat);
             gridEl.appendChild(seat);
         }
@@ -798,141 +714,79 @@
 
     function updateSeat(seat, name, fixed) {
         seat.querySelector('.student-name').innerText = name;
-        if (name) {
-            seat.className = 'seat occupied';
-            if (fixed) seat.classList.add('is-fixed');
-        } else {
-            seat.className = 'seat empty';
-        }
+        seat.className = name ? ('seat occupied' + (fixed ? ' is-fixed' : '')) : 'seat empty';
         updateLockIcon(seat);
     }
 
     function updateLockIcon(seat) {
-        const icon = seat.querySelector('.lock-icon');
-        if (icon) icon.remove();
-        if (seat.classList.contains('is-fixed')) {
+        seat.querySelector('.lock-icon')?.remove();
+        if (seat.classList.contains('is-fixed'))
             seat.insertAdjacentHTML('beforeend', '<span class="lock-icon">📌</span>');
-        }
     }
 
-    /* ─── 拖曳（導師只能交換，不能拖空位）─── */
     function setupDnD(seat) {
         seat.ondragstart = (e) => {
             if (seat.classList.contains('empty')) return e.preventDefault();
-            // 導師不能拖曳固定座位
             if (currentRole === 'teacher' && seat.classList.contains('is-fixed')) return e.preventDefault();
-            draggedElement = seat;
-            seat.style.opacity = '0.5';
+            draggedElement = seat; seat.style.opacity = '0.5';
         };
-        seat.ondragend = () => { seat.style.opacity = ''; };
-        seat.ondragover = (e) => { e.preventDefault(); seat.classList.add('drag-over'); };
+        seat.ondragend   = () => { seat.style.opacity = ''; };
+        seat.ondragover  = (e) => { e.preventDefault(); seat.classList.add('drag-over'); };
         seat.ondragleave = () => seat.classList.remove('drag-over');
         seat.ondrop = (e) => {
-            e.preventDefault();
-            seat.classList.remove('drag-over');
+            e.preventDefault(); seat.classList.remove('drag-over');
             if (!draggedElement || draggedElement === seat) return;
-
-            // 導師只能交換有人的座位（不能和空位換）
-            if (currentRole === 'teacher' && seat.classList.contains('empty')) {
-                showToast('⚠️ 導師只能交換兩個有人的座位');
-                return;
-            }
-            // 不能移動固定座位的目標
-            if (currentRole === 'teacher' && seat.classList.contains('is-fixed')) {
-                showToast('⚠️ 此座位已鎖定，無法移動');
-                return;
-            }
-
-            const tempHTML  = seat.innerHTML;
-            const tempClass = seat.className;
-            seat.innerHTML  = draggedElement.innerHTML;
-            seat.className  = draggedElement.className;
-            draggedElement.innerHTML = tempHTML;
-            draggedElement.className = tempClass;
+            if (currentRole === 'teacher' && seat.classList.contains('empty'))
+                return showToast('⚠️ 導師只能交換兩個有人的座位');
+            if (currentRole === 'teacher' && seat.classList.contains('is-fixed'))
+                return showToast('⚠️ 此座位已鎖定，無法移動');
+            const [tH, tC] = [seat.innerHTML, seat.className];
+            seat.innerHTML = draggedElement.innerHTML; seat.className = draggedElement.className;
+            draggedElement.innerHTML = tH; draggedElement.className = tC;
         };
     }
 
-    /* ─── 抽籤（管理者限定）─── */
     window.shuffleNonFixed = () => {
         if (currentRole !== 'admin') return;
-        const students = document.getElementById('studentList').value
-            .split('\n').map(s => s.trim()).filter(s => s);
-        const allSeats  = Array.from(document.querySelectorAll('.seat'));
-        const available = allSeats.filter(s => !s.classList.contains('is-fixed'));
+        const students  = document.getElementById('studentList').value.split('\n').map(s=>s.trim()).filter(s=>s);
+        const available = Array.from(document.querySelectorAll('.seat')).filter(s => !s.classList.contains('is-fixed'));
         if (students.length > available.length) return alert('學生人數大於可用座位數！');
         students.sort(() => Math.random() - 0.5);
         available.forEach(s => updateSeat(s, '', false));
         students.forEach((name, i) => updateSeat(available[i], name, false));
     };
 
-    /* ─── 同步標題 ─── */
     window.syncTitle = () => {
         const raw = document.getElementById('classTitle').value;
         document.getElementById('class-title-display').innerText = raw ? raw + '　座位表' : '請輸入班級名稱';
     };
 
-    window.confirmInit = () => {
-        if (confirm('確定要重新佈局並清空所有座位嗎？')) initGrid();
-    };
+    window.confirmInit = () => { if (confirm('確定要重新佈局並清空所有座位嗎？')) initGrid(); };
 
-    /* ════════════════════════════════
-       匯出
-    ════════════════════════════════ */
+    /* ════ 匯出 ════ */
     window.downloadImage = () => {
         const title = document.getElementById('classTitle').value || '座位表';
         const area  = document.getElementById('capture-area');
-        html2canvas(area, { scale: 2, useCORS: true, scrollX: 0, scrollY: 0,
-            width: area.scrollWidth, height: area.scrollHeight })
-        .then(canvas => {
-            const a = document.createElement('a');
-            a.download = `${title}座位表.png`;
-            a.href = canvas.toDataURL('image/png');
-            a.click();
-        });
+        html2canvas(area, { scale:2, useCORS:true, scrollX:0, scrollY:0, width:area.scrollWidth, height:area.scrollHeight })
+        .then(canvas => { const a = document.createElement('a'); a.download=`${title}座位表.png`; a.href=canvas.toDataURL('image/png'); a.click(); });
     };
 
     window.downloadPDF = () => {
         const { jsPDF } = window.jspdf;
         const title = document.getElementById('classTitle').value || '座位表';
         const area  = document.getElementById('capture-area');
-        html2canvas(area, { scale: 2, useCORS: true, scrollX: 0, scrollY: 0,
-            width: area.scrollWidth, height: area.scrollHeight })
+        html2canvas(area, { scale:2, useCORS:true, scrollX:0, scrollY:0, width:area.scrollWidth, height:area.scrollHeight })
         .then(canvas => {
-            const imgData   = canvas.toDataURL('image/png');
-            const orient    = canvas.width > canvas.height ? 'l' : 'p';
-            const pdf       = new jsPDF(orient, 'mm', 'a4');
-            const pw        = pdf.internal.pageSize.getWidth();
-            const ph        = pdf.internal.pageSize.getHeight();
-            const props     = pdf.getImageProperties(imgData);
-            const margin    = 10;
-            let fw = pw - margin * 2;
-            let fh = (props.height * fw) / props.width;
-            if (fh > ph - margin * 2) { fh = ph - margin * 2; fw = (props.width * fh) / props.height; }
-            pdf.addImage(imgData, 'PNG', (pw - fw) / 2, margin, fw, fh);
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF(canvas.width > canvas.height ? 'l' : 'p', 'mm', 'a4');
+            const pw=pdf.internal.pageSize.getWidth(), ph=pdf.internal.pageSize.getHeight();
+            const props=pdf.getImageProperties(imgData), m=10;
+            let fw=pw-m*2, fh=(props.height*fw)/props.width;
+            if (fh>ph-m*2) { fh=ph-m*2; fw=(props.width*fh)/props.height; }
+            pdf.addImage(imgData,'PNG',(pw-fw)/2,m,fw,fh);
             pdf.save(`${title}座位表.pdf`);
         });
     };
-
-    /* ════════════════════════════════
-       Firestore 安全規則提示
-       請在 Firebase Console 加入：
-       rules_version = '2';
-       service cloud.firestore {
-         match /databases/{database}/documents {
-           match /roles/{email} {
-             allow read: if request.auth != null;
-             allow write: if request.auth != null && get(/databases/$(database)/documents/roles/$(request.auth.token.email)).data.role == 'admin';
-           }
-           match /users/{uid}/classes/{classId} {
-             allow read, write: if request.auth != null;
-           }
-           match /notifications/{id} {
-             allow read, write: if request.auth != null;
-           }
-         }
-       }
-    ════════════════════════════════ */
-
 </script>
 </body>
 </html>
