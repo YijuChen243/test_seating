@@ -463,16 +463,15 @@
     };
 
     window.handleLogout  = () => signOut(auth);
-    window.toggleAuthMode = () => {
-        isRegisterMode = !isRegisterMode;
-        document.getElementById('auth-title').innerText       = isRegisterMode ? '教師帳號註冊'      : '考試座位管理系統';
-        document.getElementById('auth-sub').innerText         = isRegisterMode ? '填寫資料後完成註冊'   : '請輸入帳號與密碼登入';
-        document.getElementById('auth-switch-text').innerText = isRegisterMode ? '已有帳號？點此登入'  : '還沒有帳號？點此註冊';
-        document.getElementById('auth-hint').innerText        = isRegisterMode
-            ? '💡 帳號可使用中文姓名，密碼請設定英數組合（至少6碼）'
-            : '💡 帳號可使用中文姓名，密碼請設定英數組合（至少6碼）';
-    };
-
+   window.toggleAuthMode = () => {
+    isRegisterMode = !isRegisterMode;
+    document.getElementById('auth-title').innerText       = isRegisterMode ? '教師帳號註冊'      : '考試座位管理系統';
+    document.getElementById('auth-sub').innerText         = isRegisterMode ? '填寫資料後完成註冊'   : '請輸入帳號與密碼登入';
+    document.getElementById('auth-switch-text').innerText = isRegisterMode ? '已有帳號？點此登入'  : '還沒有帳號？點此註冊';
+    document.getElementById('auth-hint').innerText        = '💡 帳號可使用中文姓名，密碼請設定英數組合（至少6碼）';
+    // ★ 新增這行：切換按鈕文字
+    document.querySelector('.btn-auth').innerText         = isRegisterMode ? '✅ 確定註冊' : '🔐 登入系統';
+};
     /* ════ 登入監聽 ════ */
     onAuthStateChanged(auth, async (user) => {
         if (user) {
