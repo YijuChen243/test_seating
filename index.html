@@ -71,15 +71,15 @@
         }
         #class-title-display { text-align: center; font-size: 2.8rem; margin: 0 0 40px 0; font-weight: 900; letter-spacing: 2px; }
 
-        .grid { display: grid; gap: 14px; justify-content: center; margin-bottom: 40px; }
+        .grid { display: grid; gap: 10px; justify-content: center; margin-bottom: 40px; }
         .seat {
-            width: 120px; height: 86px; border: 2px solid var(--border); border-radius: 10px;
+            width: 100px; height: 75px; border: 2px solid var(--border); border-radius: 8px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             background: #fff; cursor: grab; position: relative; transition: 0.2s; user-select: none;
         }
         .seat.is-fixed { background: var(--fixed); border-color: var(--fixed-border); }
         .seat.drag-over { border: 2px dashed var(--primary); background: #eff6ff; }
-        .student-name { font-size: 1.1rem; font-weight: 700; pointer-events: none; text-align: center; word-break: break-all; padding: 0 5px; }
+        .student-name { font-size: 0.95rem; line-height: 1.2; font-weight: 700; pointer-events: none; text-align: center; word-break: break-all; padding: 0 5px; }
 
         .remarks-container { margin-top: auto; border-top: 2px solid var(--text); padding-top: 20px; }
         .remarks-title { font-weight: 800; font-size: 1.2rem; margin-bottom: 10px; display: block; }
@@ -327,7 +327,7 @@
     window.initGrid = () => {
         const c = parseInt(document.getElementById('cols').value) || 5, r = parseInt(document.getElementById('rows').value) || 5;
         const grid = document.getElementById('grid');
-        grid.style.gridTemplateColumns = `repeat(${c}, 120px)`; grid.innerHTML = '';
+        grid.style.gridTemplateColumns = `repeat(${c}, 100px)`; grid.innerHTML = '';
         for(let i=0; i<c*r; i++) grid.appendChild(createSeat("", false));
     };
 
@@ -413,7 +413,7 @@
             document.getElementById('class-remarks').value = data.remarks || "";
             syncTitle();
             const grid = document.getElementById('grid');
-            grid.style.gridTemplateColumns = `repeat(${data.cols}, 120px)`; grid.innerHTML = '';
+            grid.style.gridTemplateColumns = `repeat(${data.cols}, 100px)`; grid.innerHTML = '';
             
             // 【重要修正】：讀取座位並同時將名字提煉到左側的名單 TextArea 內
             const studentNamesArray = [];
@@ -424,6 +424,21 @@
                     studentNamesArray.push(sd.name.trim());
                 }
             });
+
+            // 新增：依據座號(前綴數字)自動排序名單
+            studentNamesArray.sort((a, b) => {
+                const matchA = a.match(/^\d+/);
+                const matchB = b.match(/^\d+/);
+                // 有數字就提取數字轉換，沒有就預設為最大值(排在最後面)
+                const numA = matchA ? parseInt(matchA[0], 10) : Number.MAX_SAFE_INTEGER;
+                const numB = matchB ? parseInt(matchB[0], 10) : Number.MAX_SAFE_INTEGER;
+                
+                if (numA !== numB) {
+                    return numA - numB;
+                }
+                return a.localeCompare(b, 'zh-Hant'); // 如果座號一樣，退回到用中文字串比較
+            });
+
             // 填回輸入框
             document.getElementById('studentList').value = studentNamesArray.join('\n');
 
