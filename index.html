@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --fixed: #ffeaa7; --fixed-border: #fdcb6e;
+            --fixed: #ffeaa7; --fixed-border: #b45309; /* 加深固定座位的邊框顏色以便PDF顯示 */
             --primary: #2563eb; --primary-dark: #1d4ed8;
             --bg: #f0f4ff; --surface: #ffffff;
             --success: #10b981; --warning: #f59e0b;
@@ -44,6 +44,7 @@
 
         label { font-size: 13px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px; }
         input, textarea, select { width: 100%; padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; margin-bottom: 10px; background: white; }
+        input[readonly] { background: #f1f5f9; cursor: not-allowed; color: var(--text-muted); }
 
         button { width: 100%; padding: 11px; margin-bottom: 8px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 7px; font-family: inherit; }
         button:hover { filter: brightness(0.95); transform: translateY(-1px); }
@@ -69,36 +70,38 @@
             display: flex;
             flex-direction: column;
         }
-        #class-title-display { text-align: center; font-size: 2.8rem; margin: 0 0 20px 0; font-weight: 900; letter-spacing: 2px; }
+        #class-title-display { text-align: center; font-size: 2.8rem; margin: 0 0 20px 0; font-weight: 900; letter-spacing: 2px; color: #0f172a; }
 
-        /* 講桌樣式 */
+        /* 講桌樣式 (加深邊框) */
         .teacher-desk {
             width: 180px;
             padding: 10px;
             margin: 0 auto 30px auto;
             background-color: #f8fafc;
-            border: 2px solid #cbd5e1;
+            border: 2px solid #475569; /* 加深為 #475569 */
             border-radius: 8px;
             text-align: center;
             font-weight: 800;
             font-size: 1.1rem;
-            color: #475569;
+            color: #1e293b;
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
             user-select: none;
         }
 
         .grid { display: grid; gap: 10px; justify-content: center; margin-bottom: 40px; }
         .seat {
-            width: 100px; height: 75px; border: 2px solid var(--border); border-radius: 8px;
+            width: 100px; height: 75px; 
+            border: 2px solid #475569; /* 加深為 #475569 以利 PDF 清晰呈現 */
+            border-radius: 8px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             background: #fff; cursor: grab; position: relative; transition: 0.2s; user-select: none;
         }
         .seat.is-fixed { background: var(--fixed); border-color: var(--fixed-border); }
         .seat.drag-over { border: 2px dashed var(--primary); background: #eff6ff; }
-        .student-name { font-size: 1.15rem; line-height: 1.2; font-weight: 700; pointer-events: none; text-align: center; word-break: break-all; padding: 0 5px; }
+        .student-name { font-size: 1.15rem; line-height: 1.2; font-weight: 700; pointer-events: none; text-align: center; word-break: break-all; padding: 0 5px; color: #0f172a; }
 
-        .remarks-container { margin-top: auto; border-top: 2px solid var(--text); padding-top: 20px; }
-        .remarks-title { font-weight: 800; font-size: 1.2rem; margin-bottom: 10px; display: block; }
+        .remarks-container { margin-top: auto; border-top: 2px solid #1e293b; padding-top: 20px; }
+        .remarks-title { font-weight: 800; font-size: 1.2rem; margin-bottom: 10px; display: block; color: #0f172a; }
         
         /* 人數統計標籤 */
         .student-count-badge {
@@ -176,6 +179,7 @@
             </div>
         </div>
 
+        <!-- 解除導師隱藏限制，讓導師也能調整欄列 -->
         <div class="config-group" id="layout-group">
             <h3>✏️ 教室配置</h3>
             <label>班級名稱</label>
@@ -202,17 +206,18 @@
 <div class="main-content">
     <div id="capture-area">
         <h1 id="class-title-display">請輸入班級名稱</h1>
-        <!-- 新增講桌 -->
+        <!-- 講桌 -->
         <div class="teacher-desk">👨‍🏫 講桌</div>
         
         <div id="grid" class="grid"></div>
         <div class="remarks-container">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <label class="remarks-title" style="margin-bottom: 0;">📝 備註事項 / 考試說明</label>
-                <!-- 新增人數統計標籤 -->
+                <!-- 人數統計標籤 -->
                 <span id="student-count-display" class="student-count-badge">實排人數：0 人</span>
             </div>
-            <textarea id="class-remarks" style="width:100%; height:120px; border:1px dashed #ccc; padding:15px; font-size:1rem; line-height:1.6;" placeholder="可在這裡輸入考試說明、監考老師或注意事項..."></textarea>
+            <!-- 加深備註欄邊框為 #475569 -->
+            <textarea id="class-remarks" style="width:100%; height:120px; border:2px dashed #475569; padding:15px; font-size:1rem; line-height:1.6;" placeholder="可在這裡輸入考試說明、監考老師或注意事項..."></textarea>
         </div>
     </div>
 </div>
@@ -324,7 +329,23 @@
         document.getElementById('role-badge').innerText = isAdmin ? "🛡️ 管理者" : "👨‍🏫 導師";
         document.getElementById('role-badge').className = "role-badge " + (isAdmin ? "admin" : "teacher");
         document.getElementById('admin-setup-panel').style.display = isAdmin ? 'block' : 'none';
-        document.getElementById('layout-group').style.display = isAdmin ? 'block' : 'none';
+        
+        // 確保配置面板對所有人都可見
+        document.getElementById('layout-group').style.display = 'block';
+        
+        // 保護導師不要改錯班級名稱
+        const titleInput = document.getElementById('classTitle');
+        if (!isAdmin) {
+            titleInput.readOnly = true;
+            titleInput.title = "導師僅能編輯被指派的班級";
+            if (!titleInput.value && assignedClass) {
+                titleInput.value = assignedClass;
+                syncTitle();
+            }
+        } else {
+            titleInput.readOnly = false;
+            titleInput.title = "";
+        }
         
         if(isAdmin && mainAdminUID !== currentUser.uid) {
             document.getElementById('main-admin-info').innerText = `🔗 協作模式：編輯 ${mainAdminName} 的班級資料`;
@@ -429,7 +450,10 @@
     }
 
     window.createNewClass = () => {
-        document.getElementById('classTitle').value = ""; document.getElementById('studentList').value = ""; document.getElementById('class-remarks').value = "";
+        // 如果是導師，新建佈局時自動保留他的班級名稱
+        document.getElementById('classTitle').value = currentRole === 'teacher' ? assignedClass : "";
+        document.getElementById('studentList').value = ""; 
+        document.getElementById('class-remarks').value = "";
         syncTitle(); initGrid(); showToast('已清空，可建立新佈局');
     };
 
