@@ -16,7 +16,7 @@
             --danger: #ef4444; --purple: #7c3aed;
             --text: #1e293b; --text-muted: #64748b;
             --border: #e2e8f0;
-            --sidebar-w: 340px;
+            --sidebar-w: 360px; /* 稍微加寬讓內容更舒適 */
         }
 
         * { box-sizing: border-box; }
@@ -26,45 +26,80 @@
             margin: 0; display: flex; height: 100vh; overflow: hidden; color: var(--text);
         }
 
+        /* 自訂捲軸，讓整體看起來更精緻 */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
         .sidebar {
             width: var(--sidebar-w); background: var(--surface);
-            box-shadow: 4px 0 20px rgba(0,0,0,0.06);
+            box-shadow: 4px 0 24px rgba(0,0,0,0.04); /* 更柔和的陰影 */
             overflow-y: auto; display: flex; flex-direction: column; flex-shrink: 0;
+            border-right: 1px solid #f1f5f9;
         }
 
-        .sidebar-header { padding: 24px 20px 16px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface); z-index: 10; }
-        .role-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 700; margin-bottom: 12px; }
-        .role-badge.admin { background: #dbeafe; color: #2563eb; }
-        .role-badge.teacher { background: #ede9fe; color: #7c3aed; }
-        .user-display-name { font-size: 18px; font-weight: 700; }
+        .sidebar-header { 
+            padding: 28px 24px 20px; 
+            border-bottom: 1px solid #f1f5f9; 
+            position: sticky; top: 0; 
+            background: rgba(255,255,255,0.95); 
+            backdrop-filter: blur(8px); /* 毛玻璃特效 */
+            z-index: 10; 
+        }
+        .role-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 800; margin-bottom: 14px; letter-spacing: 0.5px; }
+        .role-badge.admin { background: #dbeafe; color: #1d4ed8; }
+        .role-badge.teacher { background: #f3e8ff; color: #6b21a8; }
+        .user-display-name { font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 4px; }
 
-        .sidebar-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 14px; }
-        .config-group { background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
-        .config-group h3 { margin: 0 0 14px 0; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .sidebar-body { padding: 20px 24px; flex: 1; display: flex; flex-direction: column; gap: 18px; }
+        
+        /* 卡片化設計：移除生硬的邊框，改用圓角與底色 */
+        .config-group { background: #f8fafc; border: none; border-radius: 16px; padding: 20px; transition: 0.2s; }
+        .config-group:hover { background: #f1f5f9; }
+        .config-group h3 { margin: 0 0 16px 0; font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 8px; color: #334155; }
 
-        label { font-size: 13px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px; }
-        input, textarea, select { width: 100%; padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; margin-bottom: 10px; background: white; }
-        input[readonly] { background: #f1f5f9; cursor: not-allowed; color: var(--text-muted); }
+        label { font-size: 13px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 6px; }
+        
+        /* 輸入框現代化：增加 Focus 效果與圓角 */
+        input, textarea, select { 
+            width: 100%; padding: 12px 14px; border: 1.5px solid #cbd5e1; border-radius: 10px; 
+            font-size: 14px; margin-bottom: 12px; background: #ffffff; transition: all 0.2s ease; 
+            font-family: inherit; color: #0f172a;
+        }
+        input:focus, textarea:focus, select:focus {
+            border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+        }
+        input[readonly] { background: #f1f5f9; cursor: not-allowed; color: #94a3b8; border-color: #e2e8f0; }
 
-        button { width: 100%; padding: 11px; margin-bottom: 8px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 7px; font-family: inherit; }
-        button:hover { filter: brightness(0.95); transform: translateY(-1px); }
+        /* 按鈕優化 */
+        button { 
+            width: 100%; padding: 12px; margin-bottom: 10px; border: none; border-radius: 10px; 
+            cursor: pointer; font-weight: 800; transition: all 0.2s ease; display: flex; 
+            align-items: center; justify-content: center; gap: 8px; font-family: inherit; font-size: 14px;
+        }
+        button:hover { filter: brightness(0.92); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        button:active { transform: translateY(0); }
+        
         .btn-new { background: #fee2e2; color: #b91c1c; }
         .btn-cloud { background: #dbeafe; color: #1d4ed8; }
         .btn-load { background: #d1fae5; color: #065f46; }
         .btn-init { background: var(--text); color: white; }
-        .btn-shuffle { background: var(--primary); color: white; }
+        .btn-shuffle { background: var(--primary); color: white; box-shadow: 0 4px 14px rgba(37,99,235,0.2); }
         .btn-img { background: #fef3c7; color: #92400e; }
         .btn-pdf { background: #fee2e2; color: #b91c1c; }
         .btn-batch { background: #e0e7ff; color: #3730a3; }
         .btn-out { background: #f1f5f9; color: var(--text-muted); }
-        .btn-row { display: flex; gap: 8px; }
+        .btn-row { display: flex; gap: 10px; margin-bottom: -2px; }
+        .btn-row button { margin-bottom: 10px; }
 
-        .main-content { flex-grow: 1; display: flex; align-items: flex-start; justify-content: center; overflow: auto; padding: 40px; }
+        /* 內容區背景微調 */
+        .main-content { flex-grow: 1; display: flex; align-items: flex-start; justify-content: center; overflow: auto; padding: 40px; background: linear-gradient(135deg, #f0f4ff 0%, #e2e8f0 100%); }
         #capture-area { 
             background: white; 
             padding: 60px 50px; 
-            border-radius: 4px; 
-            box-shadow: 0 8px 40px rgba(0,0,0,0.06); 
+            border-radius: 12px; 
+            box-shadow: 0 20px 60px rgba(0,0,0,0.08); 
             width: 794px; 
             min-height: 1123px; 
             position: relative; 
@@ -75,11 +110,11 @@
 
         .teacher-desk {
             width: 180px;
-            padding: 10px;
+            padding: 12px;
             margin: 0 auto 30px auto;
             background-color: #f8fafc;
             border: 2px solid #475569; 
-            border-radius: 8px;
+            border-radius: 10px;
             text-align: center;
             font-weight: 800;
             font-size: 1.1rem;
@@ -106,26 +141,34 @@
         .student-count-badge {
             background: #e0e7ff;
             color: var(--primary-dark);
-            padding: 4px 14px;
+            padding: 6px 16px;
             border-radius: 20px;
             font-size: 0.95rem;
             font-weight: 800;
+            box-shadow: 0 2px 8px rgba(37,99,235,0.1);
         }
 
-        #auth-overlay, #batch-export-overlay, #loading-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.85); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(5px); }
+        #auth-overlay, #batch-export-overlay, #loading-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.85); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(8px); }
         .hidden { display: none !important; }
-        .auth-box { background: white; padding: 40px; border-radius: 20px; width: 400px; text-align: center; }
+        .auth-box { background: white; padding: 40px; border-radius: 24px; width: 420px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
 
-        .batch-modal { background: white; padding: 30px; border-radius: 16px; width: 400px; max-height: 80vh; display: flex; flex-direction: column; }
-        .batch-list { flex: 1; overflow-y: auto; border: 1.5px solid var(--border); padding: 12px; border-radius: 8px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px; text-align: left; }
-        .batch-list label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; color: var(--text); font-weight: 500; margin: 0; }
-        .batch-list input[type="checkbox"] { width: auto; margin: 0; transform: scale(1.2); }
+        .batch-modal { background: white; padding: 30px; border-radius: 20px; width: 440px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
+        .batch-list { flex: 1; overflow-y: auto; border: 1.5px solid #e2e8f0; padding: 12px; border-radius: 12px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px; text-align: left; background: #f8fafc; }
+        .batch-list label { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; color: var(--text); font-weight: 600; margin: 0; padding: 6px; border-radius: 6px; transition: 0.2s; }
+        .batch-list label:hover { background: #e0e7ff; }
+        .batch-list input[type="checkbox"] { width: 18px; height: 18px; margin: 0; cursor: pointer; }
 
-        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 12px 24px; border-radius: 10px; opacity: 0; transition: 0.3s; z-index: 9999; }
-        #toast.show { opacity: 1; }
+        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #0f172a; color: white; padding: 14px 28px; border-radius: 12px; opacity: 0; transition: 0.3s; z-index: 9999; font-weight: 700; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(-10px); }
 
-        .admin-list { font-size: 12px; margin-top: 10px; border-top: 1px solid #ddd; padding-top: 10px; }
-        .admin-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        /* 成員清單美化：使用膠囊卡片設計 */
+        .admin-list { font-size: 13px; margin-top: 15px; border-top: 1px dashed #cbd5e1; padding-top: 15px; max-height: 220px; overflow-y: auto; padding-right: 4px; }
+        .admin-list strong { color: #475569; display: block; margin-bottom: 10px; }
+        .admin-item { display: flex; justify-content: space-between; align-items: center; background: white; margin-bottom: 8px; padding: 8px 12px; border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: 0.2s; }
+        .admin-item:hover { border-color: #cbd5e1; box-shadow: 0 4px 6px rgba(0,0,0,0.04); }
+        .admin-item span { font-weight: 600; color: #1e293b; }
+        .admin-item button { padding: 6px 12px; font-size: 12px; margin: 0; width: auto; background: #fee2e2; color: #dc2626; border-radius: 8px; font-weight: 700; }
+        .admin-item button:hover { background: #fecaca; }
     </style>
 </head>
 <body>
@@ -462,15 +505,22 @@
             const name = uDoc.exists() ? uDoc.data().displayName : d.id;
             const data = d.data();
             const div = document.createElement('div'); div.className = 'admin-item';
-            div.innerHTML = `<span>${name} (${data.role === 'admin' ? '管理者' : '導師：' + (data.class || '無')})</span>
-                <button onclick="removeMember('${d.id}')" style="width:auto; padding:2px 8px; background:#fee2e2; color:red; margin:0;">刪除</button>`;
-            items.appendChild(div);
-        });
-    }
+        div.innerHTML = `<span>${name} (${data.role === 'admin' ? '管理者' : '導師：' + (data.class || '無')})</span>
+            <button onclick="removeMember('${d.id}')">刪除</button>`;
+        items.appendChild(div);
+    });
+}
 
-    window.removeMember = async (email) => { if(confirm('確定要移除此成員權限？')) { await deleteDoc(doc(db, 'roles', email)); refreshMemberList(); } }
+window.removeMember = async (email) => { 
+    if(confirm('確定要移除此成員的所有權限與註冊資料嗎？\n(移除後將從下拉選單中完全消失)')) { 
+        await deleteDoc(doc(db, 'roles', email)); 
+        await deleteDoc(doc(db, 'usernames', email)); // 關鍵修正：同時刪除註冊帳號資料
+        refreshMemberList(); 
+        refreshUserSelect(); // 同步更新下拉選單
+    } 
+}
 
-    window.assignRole = async (roleType) => {
+window.assignRole = async (roleType) => {
         const n = document.getElementById('setup-username-select').value, c = document.getElementById('setup-class').value;
         if(!n) return alert('請選擇對象');
         const e = usernameToEmail(n);
