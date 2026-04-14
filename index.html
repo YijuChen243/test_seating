@@ -79,7 +79,7 @@
         }
         .seat.is-fixed { background: var(--fixed); border-color: var(--fixed-border); }
         .seat.drag-over { border: 2px dashed var(--primary); background: #eff6ff; }
-        .student-name { font-size: 0.95rem; line-height: 1.2; font-weight: 700; pointer-events: none; text-align: center; word-break: break-all; padding: 0 5px; }
+        .student-name { font-size: 1.15rem; line-height: 1.2; font-weight: 700; pointer-events: none; text-align: center; word-break: break-all; padding: 0 5px; }
 
         .remarks-container { margin-top: auto; border-top: 2px solid var(--text); padding-top: 20px; }
         .remarks-title { font-weight: 800; font-size: 1.2rem; margin-bottom: 10px; display: block; }
@@ -104,9 +104,12 @@
             <label>中文姓名 / 帳號</label>
             <input type="text" id="auth-username" placeholder="請輸入中文姓名">
             <label>密碼</label>
-            <input type="password" id="auth-password" placeholder="請輸入密碼">
+            <div style="position: relative; margin-bottom: 10px;">
+                <input type="password" id="auth-password" placeholder="請輸入密碼" style="padding-right: 40px; margin-bottom: 0;">
+                <span id="toggle-password" onclick="togglePassword()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 18px; user-select: none;" title="顯示/隱藏密碼">👁️</span>
+            </div>
         </div>
-        <button class="btn-init" style="background:var(--primary); margin-top:10px;" id="btn-auth-action" onclick="handleAuth()">🔐 登入系統</button>
+        <button class="btn-init" style="background:var(--primary); margin-top:15px;" id="btn-auth-action" onclick="handleAuth()">🔐 登入系統</button>
         <div style="margin-top:15px; font-size:14px; color:var(--primary); cursor:pointer;" onclick="toggleAuthMode()" id="auth-switch-text">還沒有帳號？點此註冊</div>
     </div>
 </div>
@@ -212,6 +215,18 @@
         document.getElementById('auth-title').innerText = isRegisterMode ? "📝 教師帳號註冊" : "🏫 座位管理系統登入";
         document.getElementById('btn-auth-action').innerText = isRegisterMode ? "✅ 完成註冊" : "🔐 登入系統";
         document.getElementById('auth-switch-text').innerText = isRegisterMode ? "已有帳號？點此登入" : "還沒有帳號？點此註冊";
+    };
+
+    window.togglePassword = () => {
+        const pwdInput = document.getElementById('auth-password');
+        const toggleIcon = document.getElementById('toggle-password');
+        if (pwdInput.type === 'password') {
+            pwdInput.type = 'text';
+            toggleIcon.textContent = '🙈';
+        } else {
+            pwdInput.type = 'password';
+            toggleIcon.textContent = '👁️';
+        }
     };
 
     window.handleAuth = async () => {
