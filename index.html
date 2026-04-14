@@ -318,7 +318,6 @@
         } catch(err) { alert('失敗：帳號或密碼錯誤'); }
     };
 
-    // 新增：變更密碼功能
     window.changePassword = async () => {
         if (!currentUser) return;
         const newPwd = prompt("🔑 請輸入您的新密碼 (至少需 6 個字元)：");
@@ -382,7 +381,6 @@
         
         document.getElementById('layout-group').style.display = 'block';
         
-        // 批次匯出按鈕僅限管理者顯示
         document.getElementById('btn-batch-pdf').style.display = isAdmin ? 'block' : 'none';
         
         const titleInput = document.getElementById('classTitle');
@@ -408,7 +406,6 @@
         else document.getElementById('user-sub-info').innerText = "";
     }
 
-    // 將 DOM 渲染抽離成共用函式，方便單一載入與批次處理使用
     function renderClassToDOM(title, data) {
         document.getElementById('classTitle').value = title;
         document.getElementById('cols').value = data.cols;
@@ -574,7 +571,6 @@
         }
     };
 
-    // 新增：開啟批次匯出 Modal 視窗
     window.openBatchExportModal = async () => {
         const listDiv = document.getElementById('batch-class-list');
         listDiv.innerHTML = "載入班級中...";
@@ -600,7 +596,6 @@
         document.querySelectorAll('.batch-class-cb').forEach(cb => cb.checked = source.checked);
     };
 
-    // 新增：執行批次匯出動作
     window.executeBatchExport = async () => {
         const selectedCBs = Array.from(document.querySelectorAll('.batch-class-cb:checked'));
         if(selectedCBs.length === 0) return alert("請至少勾選一個班級進行匯出！");
@@ -624,23 +619,20 @@
                 
                 const d = await getDoc(doc(db, 'users', mainAdminUID, 'classes', title));
                 if(d.exists()) {
-                    // 將該班級資料繪製到畫面上
                     renderClassToDOM(title, d.data());
                     
-                    // 等待 DOM 渲染完畢
                     await new Promise(r => setTimeout(r, 600));
                     
-                    // 執行畫面擷取
-                    const canvas = await html2canvas(document.getElementById('capture-area'), { scale: 3 });
-                    const imgData = canvas.toDataURL('image/png');
+                    // 【優化核心】：將 scale 從 3 降為 2，並改用 JPEG 高壓縮格式，解決多頁記憶體崩潰問題
+                    const canvas = await html2canvas(document.getElementById('capture-area'), { scale: 2 });
+                    const imgData = canvas.toDataURL('image/jpeg', 0.85); 
                     const imgProps = pdf.getImageProperties(imgData);
                     const ratio = Math.min(pdfWidth / imgProps.width, pdfHeight / imgProps.height);
                     const w = imgProps.width * ratio;
                     const h = imgProps.height * ratio;
                     
-                    // 若不是第一頁則新增分頁
                     if (i > 0) pdf.addPage();
-                    pdf.addImage(imgData, 'PNG', (pdfWidth - w) / 2, 0, w, h);
+                    pdf.addImage(imgData, 'JPEG', (pdfWidth - w) / 2, 0, w, h);
                 }
             }
             
@@ -653,7 +645,6 @@
             alert("匯出過程發生錯誤：" + e.message);
         } finally {
             loadingOverlay.classList.add('hidden');
-            // 可選：匯出結束後還原回原本下拉選單選擇的班級，避免停在最後一個匯出的班級
             loadFromDropdown(); 
         }
     };
@@ -679,17 +670,18 @@
     };
 
     window.downloadPDF = () => {
-        html2canvas(document.getElementById('capture-area'), { scale: 3 }).then(canvas => {
+        // 單頁 PDF 也套用相同的 JPEG 優化機制
+        html2canvas(document.getElementById('capture-area'), { scale: 2 }).then(canvas => {
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('p', 'mm', 'a4');
-            const imgData = canvas.toDataURL('image/png');
+            const imgData = canvas.toDataURL('image/jpeg', 0.9);
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();
             const imgProps = pdf.getImageProperties(imgData);
             const ratio = Math.min(pdfWidth / imgProps.width, pdfHeight / imgProps.height);
             const w = imgProps.width * ratio;
             const h = imgProps.height * ratio;
-            pdf.addImage(imgData, 'PNG', (pdfWidth - w) / 2, 0, w, h);
+            pdf.addImage(imgData, 'JPEG', (pdfWidth - w) / 2, 0, w, h);
             pdf.save(`座位表_${document.getElementById('classTitle').value}.pdf`);
         });
     };
