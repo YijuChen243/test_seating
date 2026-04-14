@@ -69,7 +69,23 @@
             display: flex;
             flex-direction: column;
         }
-        #class-title-display { text-align: center; font-size: 2.8rem; margin: 0 0 40px 0; font-weight: 900; letter-spacing: 2px; }
+        #class-title-display { text-align: center; font-size: 2.8rem; margin: 0 0 20px 0; font-weight: 900; letter-spacing: 2px; }
+
+        /* 講桌樣式 */
+        .teacher-desk {
+            width: 180px;
+            padding: 10px;
+            margin: 0 auto 30px auto;
+            background-color: #f8fafc;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 800;
+            font-size: 1.1rem;
+            color: #475569;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+            user-select: none;
+        }
 
         .grid { display: grid; gap: 10px; justify-content: center; margin-bottom: 40px; }
         .seat {
@@ -83,6 +99,16 @@
 
         .remarks-container { margin-top: auto; border-top: 2px solid var(--text); padding-top: 20px; }
         .remarks-title { font-weight: 800; font-size: 1.2rem; margin-bottom: 10px; display: block; }
+        
+        /* 人數統計標籤 */
+        .student-count-badge {
+            background: #e0e7ff;
+            color: var(--primary-dark);
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            font-weight: 800;
+        }
 
         #auth-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.95); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(10px); }
         #auth-overlay.hidden { display: none; }
@@ -176,9 +202,16 @@
 <div class="main-content">
     <div id="capture-area">
         <h1 id="class-title-display">請輸入班級名稱</h1>
+        <!-- 新增講桌 -->
+        <div class="teacher-desk">👨‍🏫 講桌</div>
+        
         <div id="grid" class="grid"></div>
         <div class="remarks-container">
-            <label class="remarks-title">📝 備註事項 / 考試說明</label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <label class="remarks-title" style="margin-bottom: 0;">📝 備註事項 / 考試說明</label>
+                <!-- 新增人數統計標籤 -->
+                <span id="student-count-display" class="student-count-badge">實排人數：0 人</span>
+            </div>
             <textarea id="class-remarks" style="width:100%; height:120px; border:1px dashed #ccc; padding:15px; font-size:1rem; line-height:1.6;" placeholder="可在這裡輸入考試說明、監考老師或注意事項..."></textarea>
         </div>
     </div>
@@ -209,6 +242,13 @@
 
     const usernameToEmail = (u) => u.trim() ? `${u.trim()}@school.local` : null;
     const showToast = (m) => { const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2500); };
+
+    // 人數即時統計函數
+    window.updateStudentCount = () => {
+        const count = Array.from(document.querySelectorAll('.student-name')).filter(el => el.innerText.trim() !== "").length;
+        const countDisplay = document.getElementById('student-count-display');
+        if(countDisplay) countDisplay.innerText = `實排人數：${count} 人`;
+    };
 
     window.toggleAuthMode = () => {
         isRegisterMode = !isRegisterMode;
@@ -344,6 +384,7 @@
         const grid = document.getElementById('grid');
         grid.style.gridTemplateColumns = `repeat(${c}, 100px)`; grid.innerHTML = '';
         for(let i=0; i<c*r; i++) grid.appendChild(createSeat("", false));
+        updateStudentCount(); // 更新人數
     };
 
     function createSeat(name, fixed) {
@@ -352,7 +393,10 @@
         div.onclick = () => {
             const oldName = div.querySelector('.student-name').innerText;
             const newName = prompt("學生姓名：", oldName);
-            if (newName !== null) div.querySelector('.student-name').innerText = newName.trim();
+            if (newName !== null) {
+                div.querySelector('.student-name').innerText = newName.trim();
+                updateStudentCount(); // 更新人數
+            }
         };
         div.oncontextmenu = (e) => { e.preventDefault(); div.classList.toggle('is-fixed'); };
         div.ondragstart = (e) => { draggedElement = div; div.style.opacity = "0.5"; };
@@ -367,6 +411,7 @@
                 if(draggedElement.classList.contains('is-fixed')) div.classList.add('is-fixed'); else div.classList.remove('is-fixed');
                 draggedElement.querySelector('.student-name').innerText = tName;
                 if(tFixed) draggedElement.classList.add('is-fixed'); else draggedElement.classList.remove('is-fixed');
+                updateStudentCount(); // 更新人數
             }
         };
         return div;
@@ -430,7 +475,7 @@
             const grid = document.getElementById('grid');
             grid.style.gridTemplateColumns = `repeat(${data.cols}, 100px)`; grid.innerHTML = '';
             
-            // 【重要修正】：讀取座位並同時將名字提煉到左側的名單 TextArea 內
+            // 讀取座位並同時將名字提煉到左側的名單 TextArea 內
             const studentNamesArray = [];
             data.seats.forEach(sd => {
                 grid.appendChild(createSeat(sd.name, sd.fixed));
@@ -440,22 +485,18 @@
                 }
             });
 
-            // 新增：依據座號(前綴數字)自動排序名單
+            // 依據座號(前綴數字)自動排序名單
             studentNamesArray.sort((a, b) => {
                 const matchA = a.match(/^\d+/);
                 const matchB = b.match(/^\d+/);
-                // 有數字就提取數字轉換，沒有就預設為最大值(排在最後面)
                 const numA = matchA ? parseInt(matchA[0], 10) : Number.MAX_SAFE_INTEGER;
                 const numB = matchB ? parseInt(matchB[0], 10) : Number.MAX_SAFE_INTEGER;
-                
-                if (numA !== numB) {
-                    return numA - numB;
-                }
-                return a.localeCompare(b, 'zh-Hant'); // 如果座號一樣，退回到用中文字串比較
+                if (numA !== numB) return numA - numB;
+                return a.localeCompare(b, 'zh-Hant');
             });
 
-            // 填回輸入框
             document.getElementById('studentList').value = studentNamesArray.join('\n');
+            updateStudentCount(); // 載入完畢後更新人數
 
             showToast(`已載入佈局 (由 ${data.lastEditedBy || '系統'} 編輯於 ${new Date(data.lastEditedAt).toLocaleString()})`);
         }
@@ -468,6 +509,8 @@
         if(students.length > available.length) return alert('位置不足以容納所有學生');
         available.forEach(s => s.querySelector('.student-name').innerText = "");
         [...students].sort(() => Math.random() - 0.5).forEach((name, i) => available[i].querySelector('.student-name').innerText = name);
+        
+        updateStudentCount(); // 隨機排位後更新人數
         showToast('🎲 隨機排位完成');
     };
 
