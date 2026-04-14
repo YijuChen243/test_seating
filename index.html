@@ -414,7 +414,19 @@
             syncTitle();
             const grid = document.getElementById('grid');
             grid.style.gridTemplateColumns = `repeat(${data.cols}, 120px)`; grid.innerHTML = '';
-            data.seats.forEach(sd => grid.appendChild(createSeat(sd.name, sd.fixed)));
+            
+            // 【重要修正】：讀取座位並同時將名字提煉到左側的名單 TextArea 內
+            const studentNamesArray = [];
+            data.seats.forEach(sd => {
+                grid.appendChild(createSeat(sd.name, sd.fixed));
+                // 將非空白名字加到陣列
+                if (sd.name && sd.name.trim() !== "") {
+                    studentNamesArray.push(sd.name.trim());
+                }
+            });
+            // 填回輸入框
+            document.getElementById('studentList').value = studentNamesArray.join('\n');
+
             showToast(`已載入佈局 (由 ${data.lastEditedBy || '系統'} 編輯於 ${new Date(data.lastEditedAt).toLocaleString()})`);
         }
     };
