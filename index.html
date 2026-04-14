@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --fixed: #ffeaa7; --fixed-border: #b45309; /* 加深固定座位的邊框顏色以便PDF顯示 */
+            --fixed: #ffeaa7; --fixed-border: #b45309; 
             --primary: #2563eb; --primary-dark: #1d4ed8;
             --bg: #f0f4ff; --surface: #ffffff;
             --success: #10b981; --warning: #f59e0b;
@@ -55,6 +55,7 @@
         .btn-shuffle { background: var(--primary); color: white; }
         .btn-img { background: #fef3c7; color: #92400e; }
         .btn-pdf { background: #fee2e2; color: #b91c1c; }
+        .btn-batch { background: #e0e7ff; color: #3730a3; }
         .btn-out { background: #f1f5f9; color: var(--text-muted); }
         .btn-row { display: flex; gap: 8px; }
 
@@ -72,13 +73,12 @@
         }
         #class-title-display { text-align: center; font-size: 2.8rem; margin: 0 0 20px 0; font-weight: 900; letter-spacing: 2px; color: #0f172a; }
 
-        /* 講桌樣式 (加深邊框) */
         .teacher-desk {
             width: 180px;
             padding: 10px;
             margin: 0 auto 30px auto;
             background-color: #f8fafc;
-            border: 2px solid #475569; /* 加深為 #475569 */
+            border: 2px solid #475569; 
             border-radius: 8px;
             text-align: center;
             font-weight: 800;
@@ -91,7 +91,7 @@
         .grid { display: grid; gap: 10px; justify-content: center; margin-bottom: 40px; }
         .seat {
             width: 100px; height: 75px; 
-            border: 2px solid #475569; /* 加深為 #475569 以利 PDF 清晰呈現 */
+            border: 2px solid #475569; 
             border-radius: 8px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             background: #fff; cursor: grab; position: relative; transition: 0.2s; user-select: none;
@@ -103,7 +103,6 @@
         .remarks-container { margin-top: auto; border-top: 2px solid #1e293b; padding-top: 20px; }
         .remarks-title { font-weight: 800; font-size: 1.2rem; margin-bottom: 10px; display: block; color: #0f172a; }
         
-        /* 人數統計標籤 */
         .student-count-badge {
             background: #e0e7ff;
             color: var(--primary-dark);
@@ -113,9 +112,14 @@
             font-weight: 800;
         }
 
-        #auth-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.95); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(10px); }
-        #auth-overlay.hidden { display: none; }
+        #auth-overlay, #batch-export-overlay, #loading-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.85); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(5px); }
+        .hidden { display: none !important; }
         .auth-box { background: white; padding: 40px; border-radius: 20px; width: 400px; text-align: center; }
+
+        .batch-modal { background: white; padding: 30px; border-radius: 16px; width: 400px; max-height: 80vh; display: flex; flex-direction: column; }
+        .batch-list { flex: 1; overflow-y: auto; border: 1.5px solid var(--border); padding: 12px; border-radius: 8px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px; text-align: left; }
+        .batch-list label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; color: var(--text); font-weight: 500; margin: 0; }
+        .batch-list input[type="checkbox"] { width: auto; margin: 0; transform: scale(1.2); }
 
         #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 12px 24px; border-radius: 10px; opacity: 0; transition: 0.3s; z-index: 9999; }
         #toast.show { opacity: 1; }
@@ -140,6 +144,34 @@
         </div>
         <button class="btn-init" style="background:var(--primary); margin-top:15px;" id="btn-auth-action" onclick="handleAuth()">🔐 登入系統</button>
         <div style="margin-top:15px; font-size:14px; color:var(--primary); cursor:pointer;" onclick="toggleAuthMode()" id="auth-switch-text">還沒有帳號？點此註冊</div>
+    </div>
+</div>
+
+<!-- 批次匯出 Modal -->
+<div id="batch-export-overlay" class="hidden" style="z-index: 2000;">
+    <div class="batch-modal">
+        <h3 style="margin-top:0; color: var(--text); font-size: 1.2rem;">📚 批次匯出 PDF</h3>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">請勾選您要合併匯出為同一份 PDF 的班級。</p>
+        <div style="margin-bottom: 10px; text-align: left;">
+            <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-weight:700;">
+                <input type="checkbox" id="select-all-classes" onchange="toggleAllClasses(this)" style="width:auto; margin:0; transform:scale(1.2);"> 全選所有班級
+            </label>
+        </div>
+        <div id="batch-class-list" class="batch-list">
+            <!-- Checkboxes injected here -->
+        </div>
+        <div class="btn-row">
+            <button class="btn-out" onclick="closeBatchExportModal()">取消</button>
+            <button class="btn-shuffle" onclick="executeBatchExport()">🚀 開始合併匯出</button>
+        </div>
+    </div>
+</div>
+
+<!-- 處理中 Loading 畫面 -->
+<div id="loading-overlay" class="hidden" style="z-index: 3000;">
+    <div style="background: white; padding: 30px 50px; border-radius: 12px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+        <h2 style="color: var(--primary); margin: 0 0 10px 0;">⏳ 系統處理中</h2>
+        <p style="color: var(--text-muted); margin: 0;" id="loading-text">正在生成並合併 PDF，請稍候...</p>
     </div>
 </div>
 
@@ -174,12 +206,13 @@
                 <button class="btn-cloud" onclick="saveToCloud()">☁️ 儲存雲端</button>
             </div>
             <div class="btn-row" style="margin-top:8px;">
-                <button class="btn-img" onclick="downloadImage()">🖼️ 匯出圖片 (A4直向)</button>
-                <button class="btn-pdf" onclick="downloadPDF()">📄 匯出 PDF (A4直向)</button>
+                <button class="btn-img" onclick="downloadImage()">🖼️ 匯出圖片</button>
+                <button class="btn-pdf" onclick="downloadPDF()">📄 匯出 PDF</button>
             </div>
+            <!-- 管理者專屬的批次匯出按鈕 -->
+            <button class="btn-batch" id="btn-batch-pdf" onclick="openBatchExportModal()" style="display:none; margin-top:8px;">📚 批次選擇與匯出 PDF</button>
         </div>
 
-        <!-- 解除導師隱藏限制，讓導師也能調整欄列 -->
         <div class="config-group" id="layout-group">
             <h3>✏️ 教室配置</h3>
             <label>班級名稱</label>
@@ -199,6 +232,8 @@
             <p style="font-size:11px; color:var(--text-muted); margin-top:5px;">※ 點擊座位手動編輯，拖曳交換，右鍵鎖定位置。</p>
         </div>
 
+        <!-- 變更密碼與登出按鈕 -->
+        <button class="btn-out" onclick="changePassword()" style="background:#e2e8f0; color:#334155;">🔑 變更個人密碼</button>
         <button class="btn-out" onclick="handleLogout()">🚪 登出系統</button>
     </div>
 </div>
@@ -206,17 +241,13 @@
 <div class="main-content">
     <div id="capture-area">
         <h1 id="class-title-display">請輸入班級名稱</h1>
-        <!-- 講桌 -->
         <div class="teacher-desk">👨‍🏫 講桌</div>
-        
         <div id="grid" class="grid"></div>
         <div class="remarks-container">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <label class="remarks-title" style="margin-bottom: 0;">📝 備註事項 / 考試說明</label>
-                <!-- 人數統計標籤 -->
                 <span id="student-count-display" class="student-count-badge">實排人數：0 人</span>
             </div>
-            <!-- 加深備註欄邊框為 #475569 -->
             <textarea id="class-remarks" style="width:100%; height:120px; border:2px dashed #475569; padding:15px; font-size:1rem; line-height:1.6;" placeholder="可在這裡輸入考試說明、監考老師或注意事項..."></textarea>
         </div>
     </div>
@@ -226,7 +257,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
     import { getFirestore, doc, setDoc, getDoc, getDocs, collection, query, where, deleteDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -248,7 +279,6 @@
     const usernameToEmail = (u) => u.trim() ? `${u.trim()}@school.local` : null;
     const showToast = (m) => { const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2500); };
 
-    // 人數即時統計函數
     window.updateStudentCount = () => {
         const count = Array.from(document.querySelectorAll('.student-name')).filter(el => el.innerText.trim() !== "").length;
         const countDisplay = document.getElementById('student-count-display');
@@ -286,6 +316,26 @@
                 showToast('註冊成功！');
             } else { await signInWithEmailAndPassword(auth, e, p); }
         } catch(err) { alert('失敗：帳號或密碼錯誤'); }
+    };
+
+    // 新增：變更密碼功能
+    window.changePassword = async () => {
+        if (!currentUser) return;
+        const newPwd = prompt("🔑 請輸入您的新密碼 (至少需 6 個字元)：");
+        if (newPwd === null) return;
+        if (newPwd.trim().length < 6) return alert("密碼長度需至少 6 碼！");
+        
+        try {
+            await updatePassword(currentUser, newPwd.trim());
+            alert("✅ 密碼變更成功！\n系統將為您登出，下次請使用新密碼登入。");
+            handleLogout();
+        } catch (error) {
+            if (error.code === 'auth/requires-recent-login') {
+                alert("⚠️ 基於安全考量，變更密碼需要您【重新登入】一次。\n請先登出並重新登入後，再執行變更密碼。");
+            } else {
+                alert("變更失敗：" + error.message);
+            }
+        }
     };
 
     window.handleLogout = () => signOut(auth);
@@ -330,10 +380,11 @@
         document.getElementById('role-badge').className = "role-badge " + (isAdmin ? "admin" : "teacher");
         document.getElementById('admin-setup-panel').style.display = isAdmin ? 'block' : 'none';
         
-        // 確保配置面板對所有人都可見
         document.getElementById('layout-group').style.display = 'block';
         
-        // 保護導師不要改錯班級名稱
+        // 批次匯出按鈕僅限管理者顯示
+        document.getElementById('btn-batch-pdf').style.display = isAdmin ? 'block' : 'none';
+        
         const titleInput = document.getElementById('classTitle');
         if (!isAdmin) {
             titleInput.readOnly = true;
@@ -355,6 +406,39 @@
         
         if(!isAdmin) document.getElementById('user-sub-info').innerText = `負責班級：${assignedClass || '未指派'}`;
         else document.getElementById('user-sub-info').innerText = "";
+    }
+
+    // 將 DOM 渲染抽離成共用函式，方便單一載入與批次處理使用
+    function renderClassToDOM(title, data) {
+        document.getElementById('classTitle').value = title;
+        document.getElementById('cols').value = data.cols;
+        document.getElementById('rows').value = data.rows;
+        document.getElementById('class-remarks').value = data.remarks || "";
+        syncTitle();
+        
+        const grid = document.getElementById('grid');
+        grid.style.gridTemplateColumns = `repeat(${data.cols}, 100px)`; 
+        grid.innerHTML = '';
+        
+        const studentNamesArray = [];
+        data.seats.forEach(sd => {
+            grid.appendChild(createSeat(sd.name, sd.fixed));
+            if (sd.name && sd.name.trim() !== "") {
+                studentNamesArray.push(sd.name.trim());
+            }
+        });
+
+        studentNamesArray.sort((a, b) => {
+            const matchA = a.match(/^\d+/);
+            const matchB = b.match(/^\d+/);
+            const numA = matchA ? parseInt(matchA[0], 10) : Number.MAX_SAFE_INTEGER;
+            const numB = matchB ? parseInt(matchB[0], 10) : Number.MAX_SAFE_INTEGER;
+            if (numA !== numB) return numA - numB;
+            return a.localeCompare(b, 'zh-Hant');
+        });
+
+        document.getElementById('studentList').value = studentNamesArray.join('\n');
+        updateStudentCount();
     }
 
     async function refreshUserSelect() {
@@ -405,7 +489,7 @@
         const grid = document.getElementById('grid');
         grid.style.gridTemplateColumns = `repeat(${c}, 100px)`; grid.innerHTML = '';
         for(let i=0; i<c*r; i++) grid.appendChild(createSeat("", false));
-        updateStudentCount(); // 更新人數
+        updateStudentCount();
     };
 
     function createSeat(name, fixed) {
@@ -416,7 +500,7 @@
             const newName = prompt("學生姓名：", oldName);
             if (newName !== null) {
                 div.querySelector('.student-name').innerText = newName.trim();
-                updateStudentCount(); // 更新人數
+                updateStudentCount();
             }
         };
         div.oncontextmenu = (e) => { e.preventDefault(); div.classList.toggle('is-fixed'); };
@@ -432,7 +516,7 @@
                 if(draggedElement.classList.contains('is-fixed')) div.classList.add('is-fixed'); else div.classList.remove('is-fixed');
                 draggedElement.querySelector('.student-name').innerText = tName;
                 if(tFixed) draggedElement.classList.add('is-fixed'); else draggedElement.classList.remove('is-fixed');
-                updateStudentCount(); // 更新人數
+                updateStudentCount();
             }
         };
         return div;
@@ -450,7 +534,6 @@
     }
 
     window.createNewClass = () => {
-        // 如果是導師，新建佈局時自動保留他的班級名稱
         document.getElementById('classTitle').value = currentRole === 'teacher' ? assignedClass : "";
         document.getElementById('studentList').value = ""; 
         document.getElementById('class-remarks').value = "";
@@ -460,8 +543,6 @@
     window.saveToCloud = async () => {
         const title = document.getElementById('classTitle').value.trim();
         if(!title) return alert('請輸入班級名稱');
-        
-        // 核心權限修正：如果是導師才檢查班級限制，管理者可存取任何班級
         if(currentRole === 'teacher' && title !== assignedClass) {
             return alert(`權限限制：導師只能儲存被指派的班級「${assignedClass}」。`);
         }
@@ -482,47 +563,98 @@
     window.loadFromDropdown = async () => {
         const s = document.getElementById('classDropdown').value;
         if(!s) return;
-
-        // 核心權限修正：導師才檢查，管理者不限制
         if(currentRole === 'teacher' && s !== assignedClass) {
             return alert(`權限限制：導師只能查看被指派的班級「${assignedClass}」。`);
         }
-
         const d = await getDoc(doc(db, 'users', mainAdminUID, 'classes', s));
         if(d.exists()){
             const data = d.data();
-            document.getElementById('classTitle').value = s;
-            document.getElementById('cols').value = data.cols;
-            document.getElementById('rows').value = data.rows;
-            document.getElementById('class-remarks').value = data.remarks || "";
-            syncTitle();
-            const grid = document.getElementById('grid');
-            grid.style.gridTemplateColumns = `repeat(${data.cols}, 100px)`; grid.innerHTML = '';
-            
-            // 讀取座位並同時將名字提煉到左側的名單 TextArea 內
-            const studentNamesArray = [];
-            data.seats.forEach(sd => {
-                grid.appendChild(createSeat(sd.name, sd.fixed));
-                // 將非空白名字加到陣列
-                if (sd.name && sd.name.trim() !== "") {
-                    studentNamesArray.push(sd.name.trim());
-                }
-            });
-
-            // 依據座號(前綴數字)自動排序名單
-            studentNamesArray.sort((a, b) => {
-                const matchA = a.match(/^\d+/);
-                const matchB = b.match(/^\d+/);
-                const numA = matchA ? parseInt(matchA[0], 10) : Number.MAX_SAFE_INTEGER;
-                const numB = matchB ? parseInt(matchB[0], 10) : Number.MAX_SAFE_INTEGER;
-                if (numA !== numB) return numA - numB;
-                return a.localeCompare(b, 'zh-Hant');
-            });
-
-            document.getElementById('studentList').value = studentNamesArray.join('\n');
-            updateStudentCount(); // 載入完畢後更新人數
-
+            renderClassToDOM(s, data);
             showToast(`已載入佈局 (由 ${data.lastEditedBy || '系統'} 編輯於 ${new Date(data.lastEditedAt).toLocaleString()})`);
+        }
+    };
+
+    // 新增：開啟批次匯出 Modal 視窗
+    window.openBatchExportModal = async () => {
+        const listDiv = document.getElementById('batch-class-list');
+        listDiv.innerHTML = "載入班級中...";
+        document.getElementById('batch-export-overlay').classList.remove('hidden');
+
+        const snap = await getDocs(collection(db, 'users', mainAdminUID, 'classes'));
+        listDiv.innerHTML = "";
+        if(snap.empty) {
+            listDiv.innerHTML = "目前沒有儲存任何班級。";
+            return;
+        }
+        snap.forEach(d => {
+            const label = document.createElement('label');
+            label.innerHTML = `<input type="checkbox" class="batch-class-cb" value="${d.id}"> 班級：${d.id}`;
+            listDiv.appendChild(label);
+        });
+        document.getElementById('select-all-classes').checked = false;
+    };
+
+    window.closeBatchExportModal = () => document.getElementById('batch-export-overlay').classList.add('hidden');
+    
+    window.toggleAllClasses = (source) => {
+        document.querySelectorAll('.batch-class-cb').forEach(cb => cb.checked = source.checked);
+    };
+
+    // 新增：執行批次匯出動作
+    window.executeBatchExport = async () => {
+        const selectedCBs = Array.from(document.querySelectorAll('.batch-class-cb:checked'));
+        if(selectedCBs.length === 0) return alert("請至少勾選一個班級進行匯出！");
+        
+        const selectedClasses = selectedCBs.map(cb => cb.value);
+        closeBatchExportModal();
+        
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const loadingText = document.getElementById('loading-text');
+        loadingOverlay.classList.remove('hidden');
+        
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+
+        try {
+            for (let i = 0; i < selectedClasses.length; i++) {
+                const title = selectedClasses[i];
+                loadingText.innerText = `正在處理班級：${title} (${i+1}/${selectedClasses.length})`;
+                
+                const d = await getDoc(doc(db, 'users', mainAdminUID, 'classes', title));
+                if(d.exists()) {
+                    // 將該班級資料繪製到畫面上
+                    renderClassToDOM(title, d.data());
+                    
+                    // 等待 DOM 渲染完畢
+                    await new Promise(r => setTimeout(r, 600));
+                    
+                    // 執行畫面擷取
+                    const canvas = await html2canvas(document.getElementById('capture-area'), { scale: 3 });
+                    const imgData = canvas.toDataURL('image/png');
+                    const imgProps = pdf.getImageProperties(imgData);
+                    const ratio = Math.min(pdfWidth / imgProps.width, pdfHeight / imgProps.height);
+                    const w = imgProps.width * ratio;
+                    const h = imgProps.height * ratio;
+                    
+                    // 若不是第一頁則新增分頁
+                    if (i > 0) pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', (pdfWidth - w) / 2, 0, w, h);
+                }
+            }
+            
+            loadingText.innerText = "正在儲存 PDF 檔案...";
+            const timestamp = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14);
+            pdf.save(`批次座位表匯出_${timestamp}.pdf`);
+            showToast("✅ 批次合併匯出完成！");
+            
+        } catch(e) {
+            alert("匯出過程發生錯誤：" + e.message);
+        } finally {
+            loadingOverlay.classList.add('hidden');
+            // 可選：匯出結束後還原回原本下拉選單選擇的班級，避免停在最後一個匯出的班級
+            loadFromDropdown(); 
         }
     };
 
@@ -534,7 +666,7 @@
         available.forEach(s => s.querySelector('.student-name').innerText = "");
         [...students].sort(() => Math.random() - 0.5).forEach((name, i) => available[i].querySelector('.student-name').innerText = name);
         
-        updateStudentCount(); // 隨機排位後更新人數
+        updateStudentCount();
         showToast('🎲 隨機排位完成');
     };
 
