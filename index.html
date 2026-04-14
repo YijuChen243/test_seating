@@ -383,6 +383,9 @@
         
         document.getElementById('btn-batch-pdf').style.display = isAdmin ? 'block' : 'none';
         
+        // 新增：僅管理者可見「建立新班級佈局」按鈕，避免導師誤用
+        document.getElementById('btn-new').style.display = isAdmin ? 'flex' : 'none';
+        
         const titleInput = document.getElementById('classTitle');
         if (!isAdmin) {
             titleInput.readOnly = true;
