@@ -94,9 +94,10 @@
             flex-direction: column;
             box-shadow: 0 0 40px rgba(0,0,0,0.1);
         }
-        #class-title-display { text-align: center; font-size: 2.8rem; margin: 0 0 20px 0; font-weight: 900; color: #0f172a; }
+        #exam-header { text-align: center; font-size: 2.2rem; font-weight: 800; color: #475569; margin: 0 0 6px 0; letter-spacing: 1px; }
+        #class-title-display { text-align: center; font-size: 2.2rem; margin: 0 0 20px 0; font-weight: 900; color: #0f172a; }
 
-        .teacher-desk { width: 180px; padding: 12px; margin: 0 auto 30px auto; background-color: #f8fafc; border: 2px solid #475569; border-radius: 10px; text-align: center; font-weight: 800; }
+        .teacher-desk { width: 300px; padding: 22px 30px; margin: 10px auto 50px auto; background-color: #f8fafc; border: 3px solid #475569; border-radius: 12px; text-align: center; font-weight: 800; font-size: 1.6rem; }
 
         .grid { display: grid; gap: 10px; justify-content: center; margin-bottom: 40px; }
         .seat {
@@ -258,6 +259,8 @@
 
         <div class="config-group" id="layout-group">
             <h3>✏️ 教室配置</h3>
+            <label>考試標題</label>
+            <input type="text" id="examHeaderInput" value="114學年度第1學期第○次期中考" oninput="updateExamHeader()" placeholder="例如：114學年度第1學期第一次期中考">
             <label>班級名稱</label>
             <input type="text" id="classTitle" oninput="syncTitle()" placeholder="例如：資三乙">
             <div style="display:flex;gap:10px;">
@@ -281,9 +284,10 @@
 
 <div class="main-content">
     <div id="capture-area">
+        <h2 id="exam-header">114學年度第1學期第○次期中考</h2>
         <h1 id="class-title-display">請輸入班級名稱</h1>
-        <div class="teacher-desk">👨‍🏫 講桌</div>
         <div id="grid" class="grid"></div>
+        <div class="teacher-desk">👨‍🏫 講桌</div>
         <div class="remarks-container">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                 <label class="remarks-title" style="margin-bottom:0;">📝 備註事項 / 考試說明</label>
@@ -482,6 +486,10 @@
         document.getElementById('rows').value = data.rows;
         document.getElementById('class-remarks-div').innerText = data.remarks || "";
         document.getElementById('classTitle').value = title;
+        if(data.examHeader) {
+            document.getElementById('examHeaderInput').value = data.examHeader;
+            document.getElementById('exam-header').innerText = data.examHeader;
+        }
         syncTitle();
         
         const grid = document.getElementById('grid');
@@ -511,6 +519,11 @@
     window.syncTitle = () => {
         const t = document.getElementById('classTitle').value;
         document.getElementById('class-title-display').innerText = t ? `${t} 考試座位表` : "未設定班級";
+    };
+
+    window.updateExamHeader = () => {
+        const v = document.getElementById('examHeaderInput').value;
+        document.getElementById('exam-header').innerText = v || '114學年度第1學期第○次期中考';
     };
 
     window.confirmInit = () => { if(confirm('確定要清除目前的排列重新開始嗎？')) initGrid(); };
@@ -586,6 +599,7 @@
         await setDoc(doc(db, 'users', mainAdminUID, 'classes', title), {
             cols: document.getElementById('cols').value,
             rows: document.getElementById('rows').value,
+            examHeader: document.getElementById('examHeaderInput').value,
             remarks: document.getElementById('class-remarks-div').innerText,
             seats,
             lastEditedBy: currentUsername,
@@ -611,14 +625,29 @@
     window.shuffleNonFixed = () => {
         const raw = document.getElementById('studentList').value.split('\n').map(s => s.trim()).filter(s => s);
         if(!raw.length) return alert('名單是空的');
-        const avai = Array.from(document.querySelectorAll('.seat')).filter(s => !s.classList.contains('is-fixed'));
+        const cols = parseInt(document.getElementById('cols').value) || 5;
+        const allSeats = Array.from(document.querySelectorAll('.seat'));
+        const avai = allSeats.filter(s => !s.classList.contains('is-fixed'));
         if(raw.length > avai.length) return alert('位置不夠放！');
-        
-        avai.forEach(s => s.querySelector('.student-name').innerText = "");
-        [...raw].sort(()=>Math.random()-0.5).forEach((n, i) => {
-            avai[i].querySelector('.student-name').innerText = n;
+
+        // 從最底下一排往上蒐集可用座位
+        const rows = Math.ceil(allSeats.length / cols);
+        const avaiReversed = [];
+        for(let r = rows - 1; r >= 0; r--) {
+            for(let c = 0; c < cols; c++) {
+                const idx = r * cols + c;
+                if(idx < allSeats.length && !allSeats[idx].classList.contains('is-fixed')) {
+                    avaiReversed.push(allSeats[idx]);
+                }
+            }
+        }
+
+        avaiReversed.forEach(s => s.querySelector('.student-name').innerText = '');
+        const shuffled = [...raw].sort(() => Math.random() - 0.5);
+        shuffled.forEach((n, i) => {
+            if(i < avaiReversed.length) avaiReversed[i].querySelector('.student-name').innerText = n;
         });
-        showToast('🎲 隨機排位完成');
+        showToast('🎲 隨機排位完成（由後排往前）');
     };
 
     window.syncRemarksToAll = async () => {
