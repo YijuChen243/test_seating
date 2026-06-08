@@ -155,8 +155,8 @@
 <body>
 
 <div id="auth-overlay">
-    <div class="auth-box">
-        <h2 id="auth-title" onclick="toggleAuthMode()" style="cursor: pointer; user-select: none;">🏫 座位管理系統登入</h2>
+   <div id="auth-overlay">
+    <div class="auth-box" style="width: 440px;"> <h2 id="auth-title" onclick="toggleAuthMode()" style="cursor: pointer; user-select: none;">🏫 座位管理系統登入</h2>
         <div style="text-align:left; margin-top:20px;">
             <label>中文姓名 / 帳號</label>
             <input type="text" id="auth-username" placeholder="請輸入姓名">
@@ -166,9 +166,16 @@
                 <span id="toggle-password" onclick="togglePassword('auth-password', 'toggle-password')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 18px; user-select: none;" title="顯示/隱藏密碼">👁️</span>
             </div>
         </div>
+
+        <div style="text-align: left; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 14px; margin-top: 15px; font-size: 11px; color: #64748b; line-height: 1.5;">
+            <strong style="color: #334155; display: block; margin-bottom: 4px;">🔐 個人資料蒐集告知聲明：</strong>
+            本系統依據《個資法》規定，在此告知您所輸入之「教師姓名、電子郵件」及匯入之「學生名單（姓名/座號）」，僅限用於校內考試座位編排與監考管理之特定目的。相關資料皆透過 Firebase Rules 進行權限鎖定與加密傳輸，利用期間屆滿後即進行清理。當您點擊下方按鈕登入時，即視為已閱讀並同意上述個資告知事項。
+        </div>
+
         <button class="btn-init" style="background:var(--primary); margin-top:15px;" id="btn-auth-action" onclick="handleAuth()">🔐 登入系統</button>
-       <div style="display: none;" onclick="toggleAuthMode()" id="auth-switch-text">註冊帳號</div>
+        <div style="display: none;" onclick="toggleAuthMode()" id="auth-switch-text">註冊帳號</div>
     </div>
+</div>
 </div>
 
 <div id="loading-overlay" class="hidden">
