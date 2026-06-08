@@ -363,46 +363,17 @@
         }
     }
 
-    onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            currentUser = user;
-            document.getElementById('auth-overlay').classList.add('hidden');
-            const nameDoc = await getDoc(doc(db, 'usernames', user.email));
-            currentUsername = nameDoc.exists() ? nameDoc.data().displayName : user.email.split('@')[0];
-            document.getElementById('user-display-name').innerText = currentUsername;
-
-            const rDoc = await getDoc(doc(db, 'roles', user.email));
-            if(rDoc.exists()){
-                const rd = rDoc.data();
-                currentRole = rd.role;
-                assignedClass = rd.class || "";
-                mainAdminUID = rd.sharedWith || user.uid;
-                
-                if (rd.sharedWith) {
-                    const mSnap = await getDocs(query(collection(db, 'roles'), where('uid', '==', mainAdminUID), where('isMainAdmin', '==', true)));
-                    if(!mSnap.empty){
-                        const mnd = await getDoc(doc(db, 'usernames', mSnap.docs[0].id));
-                        mainAdminName = mnd.exists() ? mnd.data().displayName : "主管理者";
-                    }
-                } else {
-                    mainAdminName = currentUsername;
-                }
-            } else {
-                currentRole = 'teacher';
-                mainAdminUID = user.uid;
-                mainAdminName = currentUsername;
-            }
-
-            applyRoleUI(); 
-            refreshClassList(); 
-            refreshMemberList(); 
-            refreshUserSelect(); 
-            initGrid();
-            lockTeacherPermissions();
-        } else {
-            document.getElementById('auth-overlay').classList.remove('hidden');
-        }
-    });
+    const roleDoc = await getDoc(doc(db, 'roles', user.email));
+if (roleDoc.exists()) {
+    const data = roleDoc.data();
+    currentRole   = data.role;
+    assignedClass = data.class || null;
+} else {
+    // 🛡️ 安全修正：預設拒絕權限，必須由後端或資訊組長手動在 Firebase 加人，不能自動給 admin
+    currentRole = 'teacher'; 
+    assignedClass = '未分派班級';
+    alert('您的帳號尚未開通導師或管理者權限，請洽學校資訊組。');
+}
 
     function applyRoleUI() {
         const isAdmin = currentRole === 'admin';
@@ -835,16 +806,27 @@
     };
 
     window.handleAuth = async () => {
-        const u = document.getElementById('auth-username').value;
-        const p = document.getElementById('auth-password').value;
-        if(!u || !p) return alert('請輸入完整內容');
-        try {
-            if(isRegisterMode) {
-                await createUserWithEmailAndPassword(auth, usernameToEmail(u), p);
-                await setDoc(doc(db, 'usernames', usernameToEmail(u)), { displayName: u });
-            } else { await signInWithEmailAndPassword(auth, usernameToEmail(u), p); }
-        } catch(e) { alert('驗證失敗，請檢查帳號密碼'); }
-    };
+    const email    = document.getElementById('auth-email').value.trim();
+    const password = document.getElementById('auth-password').value;
+    if (!email || !password) return alert('請完整填寫帳號與密碼');
+    
+    // 🛡️ 新增：限制校內教職員信箱網域（請將 school.edu.tw 改為你們學校的實際網域）
+    const schoolDomain = "@school.edu.tw"; 
+    if (!email.endsWith(schoolDomain)) {
+        return alert(`認證失敗：本系統僅限使用學校信箱 (${schoolDomain}) 登入！`);
+    }
+
+    try {
+        if (isRegisterMode) {
+            await createUserWithEmailAndPassword(auth, email, password);
+            showToast('✅ 註冊成功！');
+        } else {
+            await signInWithEmailAndPassword(auth, email, password);
+        }
+    } catch (e) {
+        alert('認證失敗，請檢查帳號密碼或網路連線。\n' + e.message);
+    }
+};
 
     window.toggleAuthMode = () => {
         isRegisterMode = !isRegisterMode;
