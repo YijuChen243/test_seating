@@ -156,7 +156,7 @@
 
 <div id="auth-overlay">
     <div class="auth-box">
-        <h2 id="auth-title">🏫 座位管理系統登入</h2>
+        <h2 id="auth-title" onclick="toggleAuthMode()" style="cursor: pointer; user-select: none;">🏫 座位管理系統登入</h2>
         <div style="text-align:left; margin-top:20px;">
             <label>中文姓名 / 帳號</label>
             <input type="text" id="auth-username" placeholder="請輸入姓名">
@@ -167,7 +167,7 @@
             </div>
         </div>
         <button class="btn-init" style="background:var(--primary); margin-top:15px;" id="btn-auth-action" onclick="handleAuth()">🔐 登入系統</button>
-        //<div style="margin-top:15px; font-size:14px; color:var(--primary); cursor:pointer;" onclick="toggleAuthMode()" id="auth-switch-text">註冊帳號</div>
+       <div style="display: none;" onclick="toggleAuthMode()" id="auth-switch-text">註冊帳號</div>
     </div>
 </div>
 
