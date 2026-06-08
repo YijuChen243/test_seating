@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>雲端考試座位管理系統 - 專業協作版</title>
+    <title>雲端考試座位管理系統 - 專業協作安全版</title>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -59,7 +59,6 @@
             font-size: 14px; margin-bottom: 12px; background: #ffffff; transition: all 0.2s ease; 
             font-family: inherit; color: #0f172a;
         }
-        /* 導師被鎖定時的樣式 */
         .locked-input { background: #e2e8f0 !important; cursor: not-allowed !important; color: #64748b !important; pointer-events: none; }
 
         button { 
@@ -82,12 +81,11 @@
 
         .main-content { flex-grow: 1; display: flex; align-items: flex-start; justify-content: center; overflow: auto; padding: 40px; background: #e2e8f0; }
         
-        /* 列印區域核心修正 */
         #capture-area { 
             background: white; 
             padding: 60px 50px; 
             border-radius: 8px; 
-            width: 794px; /* A4 比例 */
+            width: 794px; 
             min-height: 1123px; 
             position: relative; 
             display: flex;
@@ -107,7 +105,6 @@
         .seat.is-fixed { background: var(--fixed); border-color: var(--fixed-border); }
         .student-name { font-size: 1.15rem; font-weight: 700; text-align: center; word-break: break-all; }
 
-        /* 修正備註截斷：改用可編輯 div 並取消固定高度與捲軸 */
         .remarks-container { margin-top: auto; border-top: 2px solid #1e293b; padding-top: 20px; }
         .remarks-title { font-weight: 800; font-size: 1.2rem; margin-bottom: 10px; color: #0f172a; }
         
@@ -119,7 +116,7 @@
             font-size: 1rem;
             line-height: 1.6;
             color: #1e293b;
-            white-space: pre-wrap; /* 保留換行 */
+            white-space: pre-wrap; 
             word-wrap: break-word;
             border-radius: 8px;
             outline: none;
@@ -127,8 +124,7 @@
         }
         #class-remarks-div:focus { border-color: var(--primary); background: #f8fafc; }
 
-        /* 彈出視窗樣式還原 */
-        #auth-overlay, #loading-overlay, #batch-export-overlay, #status-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.9); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+        #auth-overlay, #loading-overlay, #batch-export-overlay, #status-overlay, #pwd-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.9); display: flex; justify-content: center; align-items: center; z-index: 2000; }
         .auth-box { background: white; padding: 40px; border-radius: 24px; width: 400px; text-align: center; }
         
         .batch-modal { background: white; padding: 30px; border-radius: 20px; width: 440px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
@@ -147,7 +143,6 @@
         #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #0f172a; color: white; padding: 12px 24px; border-radius: 10px; opacity: 0; transition: 0.3s; z-index: 9999; font-weight: 700; }
         #toast.show { opacity: 1; transform: translateX(-50%) translateY(-10px); }
 
-        /* 成員清單美化 */
         .admin-list { font-size: 13px; margin-top: 15px; border-top: 1px dashed #cbd5e1; padding-top: 15px; max-height: 220px; overflow-y: auto; padding-right: 4px; }
         .admin-list strong { color: #475569; display: block; margin-bottom: 10px; }
         .admin-item { display: flex; justify-content: space-between; align-items: center; background: white; margin-bottom: 8px; padding: 8px 12px; border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: 0.2s; }
@@ -168,11 +163,11 @@
             <label>密碼</label>
             <div style="position: relative; margin-bottom: 10px;">
                 <input type="password" id="auth-password" placeholder="請輸入密碼" style="padding-right: 40px; margin-bottom: 0;">
-                <span id="toggle-password" onclick="togglePassword()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 18px; user-select: none;" title="顯示/隱藏密碼">👁️</span>
+                <span id="toggle-password" onclick="togglePassword('auth-password', 'toggle-password')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 18px; user-select: none;" title="顯示/隱藏密碼">👁️</span>
             </div>
         </div>
         <button class="btn-init" style="background:var(--primary); margin-top:15px;" id="btn-auth-action" onclick="handleAuth()">🔐 登入系統</button>
-        
+        <div style="margin-top:15px; font-size:14px; color:var(--primary); cursor:pointer;" onclick="toggleAuthMode()" id="auth-switch-text">註冊帳號</div>
     </div>
 </div>
 
@@ -183,7 +178,24 @@
     </div>
 </div>
 
-<!-- 批次匯出 Modal -->
+<div id="pwd-overlay" class="hidden">
+    <div class="auth-box">
+        <h2>🔑 變更個人密碼</h2>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">請設定您的新密碼（至少需 6 個字元）</p>
+        <div style="text-align:left;">
+            <label>新密碼</label>
+            <div style="position: relative; margin-bottom: 15px;">
+                <input type="password" id="new-password-input" placeholder="請輸入新密碼" style="padding-right: 40px; margin-bottom: 0;">
+                <span id="toggle-new-password" onclick="togglePassword('new-password-input', 'toggle-new-password')" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 18px; user-select: none;">👁️</span>
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button class="btn-out" onclick="closePasswordModal()" style="margin:0;">取消</button>
+            <button class="btn-shuffle" onclick="executeChangePassword()" style="margin:0;">💾 確認變更</button>
+        </div>
+    </div>
+</div>
+
 <div id="batch-export-overlay" class="hidden">
     <div class="batch-modal">
         <h3 style="margin-top:0; color: var(--text); font-size: 1.2rem;">📚 批次匯出 PDF</h3>
@@ -201,7 +213,6 @@
     </div>
 </div>
 
-<!-- 各班編輯進度追蹤 Modal -->
 <div id="status-overlay" class="hidden">
     <div class="status-modal">
         <h3 style="margin-top:0; color: var(--text); font-size: 1.3rem;">📊 各班編輯進度追蹤</h3>
@@ -223,7 +234,6 @@
     </div>
 
     <div class="sidebar-body">
-        <!-- 管理者功能 -->
         <div id="admin-only-section" style="display:none;">
             <div class="config-group" style="background:#f5f3ff;">
                 <h3>🛡️ 協作權限</h3>
@@ -252,7 +262,6 @@
                 <button class="btn-img" onclick="downloadImage()">🖼️ 圖片</button>
                 <button class="btn-pdf" onclick="downloadPDF()">📄 PDF</button>
             </div>
-            <!-- 管理者專屬按鈕 -->
             <button class="btn-batch" id="btn-batch-pdf" onclick="openBatchExportModal()" style="display:none; margin-top:8px;">📚 批次選擇與匯出 PDF</button>
             <button class="btn-out" id="btn-status" onclick="openStatusModal()" style="display:none; background:#ccfbf1; color:#0f766e; margin-top:8px;">📊 檢視各班編輯進度</button>
         </div>
@@ -277,7 +286,7 @@
             <button class="btn-shuffle" onclick="shuffleNonFixed()">🎲 隨機排位</button>
         </div>
 
-        <button class="btn-out" onclick="changePassword()" style="background:#e2e8f0; color:#334155; margin-top:auto;">🔑 變更個人密碼</button>
+        <button class="btn-out" onclick="openPasswordModal()" style="background:#e2e8f0; color:#334155; margin-top:auto;">🔑 變更個人密碼</button>
         <button class="btn-out" onclick="handleLogout()">🚪 登出系統</button>
     </div>
 </div>
@@ -327,9 +336,9 @@
     const usernameToEmail = (u) => `${u.trim()}@school.local`;
     const showToast = (m) => { const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2500); };
 
-    window.togglePassword = () => {
-        const pwdInput = document.getElementById('auth-password');
-        const toggleIcon = document.getElementById('toggle-password');
+    window.togglePassword = (inputId, iconId) => {
+        const pwdInput = document.getElementById(inputId);
+        const toggleIcon = document.getElementById(iconId);
         if (pwdInput.type === 'password') {
             pwdInput.type = 'text';
             toggleIcon.textContent = '🙈';
@@ -339,7 +348,6 @@
         }
     };
 
-    // 核心鎖定邏輯：僅鎖定導師的名單與班級名稱，解開格子數量與重置權限
     function lockTeacherPermissions() {
         const isAdmin = (currentRole === 'admin');
         const listInput = document.getElementById('studentList');
@@ -363,17 +371,46 @@
         }
     }
 
-    const roleDoc = await getDoc(doc(db, 'roles', user.email));
-if (roleDoc.exists()) {
-    const data = roleDoc.data();
-    currentRole   = data.role;
-    assignedClass = data.class || null;
-} else {
-    // 🛡️ 安全修正：預設拒絕權限，必須由後端或資訊組長手動在 Firebase 加人，不能自動給 admin
-    currentRole = 'teacher'; 
-    assignedClass = '未分派班級';
-    alert('您的帳號尚未開通導師或管理者權限，請洽學校資訊組。');
-}
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            currentUser = user;
+            document.getElementById('auth-overlay').classList.add('hidden');
+            const nameDoc = await getDoc(doc(db, 'usernames', user.email));
+            currentUsername = nameDoc.exists() ? nameDoc.data().displayName : user.email.split('@')[0];
+            document.getElementById('user-display-name').innerText = currentUsername;
+
+            const rDoc = await getDoc(doc(db, 'roles', user.email));
+            if(rDoc.exists()){
+                const rd = rDoc.data();
+                currentRole = rd.role;
+                assignedClass = rd.class || "";
+                mainAdminUID = rd.sharedWith || user.uid;
+                
+                if (rd.sharedWith) {
+                    const mSnap = await getDocs(query(collection(db, 'roles'), where('uid', '==', mainAdminUID), where('isMainAdmin', '==', true)));
+                    if(!mSnap.empty){
+                        const mnd = await getDoc(doc(db, 'usernames', mSnap.docs[0].id));
+                        mainAdminName = mnd.exists() ? mnd.data().displayName : "主管理者";
+                    }
+                } else {
+                    mainAdminName = currentUsername;
+                }
+            } else {
+                currentRole = 'teacher';
+                mainAdminUID = user.uid;
+                mainAdminName = currentUsername;
+            }
+
+            applyRoleUI(); 
+            refreshClassList(); 
+            refreshMemberList(); 
+            refreshUserSelect(); 
+            initGrid();
+            lockTeacherPermissions();
+        } else {
+            document.getElementById('auth-overlay').classList.remove('hidden');
+        }
+    });
 
     function applyRoleUI() {
         const isAdmin = currentRole === 'admin';
@@ -392,7 +429,6 @@ if (roleDoc.exists()) {
             }
         }
         
-        // 顯示管理者專屬按鈕
         document.getElementById('btn-batch-pdf').style.display = isAdmin ? 'block' : 'none';
         document.getElementById('btn-status').style.display = isAdmin ? 'block' : 'none';
         const syncBtn = document.getElementById('btn-sync-remarks');
@@ -452,6 +488,18 @@ if (roleDoc.exists()) {
         refreshMemberList();
     };
 
+    window.createNewClass = () => {
+        if(currentRole !== 'admin') return;
+        const name = prompt("請輸入全新班級名稱：(例如: 資三甲)");
+        if(!name || !name.trim()) return;
+        document.getElementById('classTitle').value = name.trim();
+        syncTitle();
+        initGrid();
+        document.getElementById('studentList').value = "";
+        document.getElementById('class-remarks-div').innerText = "";
+        showToast(`已預備全新班級 ${name.trim()}，請排位後點選儲存`);
+    };
+
     function renderClassToDOM(title, data) {
         document.getElementById('cols').value = data.cols;
         document.getElementById('rows').value = data.rows;
@@ -473,7 +521,6 @@ if (roleDoc.exists()) {
             if(sd.name && sd.name.trim() !== "") nameList.push(sd.name.trim());
         });
         
-        // 加入座號排序邏輯
         nameList.sort((a, b) => {
             const matchA = a.match(/^\d+/);
             const matchB = b.match(/^\d+/);
@@ -550,7 +597,10 @@ if (roleDoc.exists()) {
         const drop = document.getElementById('classDropdown'), sDrop = document.getElementById('setup-class');
         drop.innerHTML = '<option value="">-- 選擇班級 --</option>';
         sDrop.innerHTML = '<option value="">選擇班級</option>';
-        const snap = await getDocs(collection(db, 'users', mainAdminUID, 'classes'));
+        
+        // ✨ 安全修正：改從根目錄的 classes 集合比對 ownerAdminUID 撈取
+        const q = query(collection(db, 'classes'), where('ownerAdminUID', '==', mainAdminUID));
+        const snap = await getDocs(q);
         snap.forEach(d => {
             const opt = document.createElement('option'); opt.value = d.id; opt.innerText = d.id;
             drop.appendChild(opt); sDrop.appendChild(opt.cloneNode(true));
@@ -567,14 +617,17 @@ if (roleDoc.exists()) {
             fixed: s.classList.contains('is-fixed')
         }));
 
-        await setDoc(doc(db, 'users', mainAdminUID, 'classes', title), {
+        // ✨ 安全修正：不依賴巢狀路徑，直接儲存在根節點 classes 內，並夾帶擁有者與編輯者資訊
+        await setDoc(doc(db, 'classes', title), {
             cols: document.getElementById('cols').value,
             rows: document.getElementById('rows').value,
             examHeader: document.getElementById('examHeaderInput').value,
             remarks: document.getElementById('class-remarks-div').innerText,
             seats,
             lastEditedBy: currentUsername,
-            lastEditedAt: new Date().toISOString()
+            lastEditedAt: new Date().toISOString(),
+            ownerAdminUID: mainAdminUID,
+            assignedTeacher: currentRole === 'teacher' ? currentUser.email : usernameToEmail(currentUsername)
         });
         showToast('✅ 雲端儲存成功');
         refreshClassList();
@@ -585,7 +638,8 @@ if (roleDoc.exists()) {
         if(!s) return;
         if(currentRole === 'teacher' && s !== assignedClass) return alert('導師僅限存取指派班級');
         
-        const d = await getDoc(doc(db, 'users', mainAdminUID, 'classes', s));
+        // ✨ 安全修正：改讀取根節點對應的文件
+        const d = await getDoc(doc(db, 'classes', s));
         if(d.exists()) {
             renderClassToDOM(s, d.data());
             lockTeacherPermissions(); 
@@ -601,7 +655,6 @@ if (roleDoc.exists()) {
         const avai = allSeats.filter(s => !s.classList.contains('is-fixed'));
         if(raw.length > avai.length) return alert('位置不夠放！');
 
-        // 從最底下一排往上蒐集可用座位
         const rows = Math.ceil(allSeats.length / cols);
         const avaiReversed = [];
         for(let r = rows - 1; r >= 0; r--) {
@@ -631,14 +684,15 @@ if (roleDoc.exists()) {
         loadingText.innerText = "正在批次更新所有班級的備註，請稍候...";
         
         try {
-            const snap = await getDocs(collection(db, 'users', mainAdminUID, 'classes'));
+            const q = query(collection(db, 'classes'), where('ownerAdminUID', '==', mainAdminUID));
+            const snap = await getDocs(q);
             if(snap.empty) {
                 alert("目前沒有任何已儲存的班級！");
                 return;
             }
             const batchPromises = [];
             snap.forEach(d => {
-                batchPromises.push(setDoc(doc(db, 'users', mainAdminUID, 'classes', d.id), {
+                batchPromises.push(setDoc(doc(db, 'classes', d.id), {
                     remarks: remarkText
                 }, { merge: true }));
             });
@@ -656,7 +710,8 @@ if (roleDoc.exists()) {
         listDiv.innerHTML = "載入班級中...";
         document.getElementById('batch-export-overlay').classList.remove('hidden');
 
-        const snap = await getDocs(collection(db, 'users', mainAdminUID, 'classes'));
+        const q = query(collection(db, 'classes'), where('ownerAdminUID', '==', mainAdminUID));
+        const snap = await getDocs(q);
         listDiv.innerHTML = "";
         if(snap.empty) {
             listDiv.innerHTML = "目前沒有儲存任何班級。";
@@ -697,7 +752,7 @@ if (roleDoc.exists()) {
                 const title = selectedClasses[i];
                 loadingText.innerText = `正在處理班級：${title} (${i+1}/${selectedClasses.length})`;
                 
-                const d = await getDoc(doc(db, 'users', mainAdminUID, 'classes', title));
+                const d = await getDoc(doc(db, 'classes', title));
                 if(d.exists()) {
                     renderClassToDOM(title, d.data());
                     await new Promise(r => setTimeout(r, 600));
@@ -732,7 +787,8 @@ if (roleDoc.exists()) {
         tbody.innerHTML = "<tr><td colspan='3' style='text-align:center; padding: 20px;'>⏳ 載入資料中...</td></tr>";
         document.getElementById('status-overlay').classList.remove('hidden');
 
-        const snap = await getDocs(collection(db, 'users', mainAdminUID, 'classes'));
+        const q = query(collection(db, 'classes'), where('ownerAdminUID', '==', mainAdminUID));
+        const snap = await getDocs(q);
         if(snap.empty) {
             tbody.innerHTML = "<tr><td colspan='3' style='text-align:center; padding: 20px;'>目前沒有儲存任何班級資料。</td></tr>";
             return;
@@ -762,19 +818,30 @@ if (roleDoc.exists()) {
 
     window.closeStatusModal = () => document.getElementById('status-overlay').classList.add('hidden');
 
-    window.changePassword = async () => {
+    // ✨ 安全與體驗優化：將 prompt 換成安全的內嵌密碼輸入彈出視窗
+    window.openPasswordModal = () => {
         if (!currentUser) return;
-        const newPwd = prompt("🔑 請輸入您的新密碼 (至少需 6 個字元)：");
-        if (newPwd === null) return;
-        if (newPwd.trim().length < 6) return alert("密碼長度需至少 6 碼！");
+        document.getElementById('new-password-input').value = "";
+        document.getElementById('pwd-overlay').classList.remove('hidden');
+    };
+
+    window.closePasswordModal = () => {
+        document.getElementById('pwd-overlay').classList.add('hidden');
+    };
+
+    window.executeChangePassword = async () => {
+        const newPwd = document.getElementById('new-password-input').value;
+        if (!newPwd || newPwd.trim().length < 6) return alert("密碼長度需至少 6 碼！");
         
         try {
             await updatePassword(currentUser, newPwd.trim());
+            closePasswordModal();
             alert("✅ 密碼變更成功！\n系統將為您登出，下次請使用新密碼登入。");
             handleLogout();
         } catch (error) {
             if (error.code === 'auth/requires-recent-login') {
                 alert("⚠️ 基於安全考量，變更密碼需要您【重新登入】一次。\n請先登出並重新登入後，再執行變更密碼。");
+                closePasswordModal();
             } else {
                 alert("變更失敗：" + error.message);
             }
@@ -806,27 +873,16 @@ if (roleDoc.exists()) {
     };
 
     window.handleAuth = async () => {
-    const email    = document.getElementById('auth-email').value.trim();
-    const password = document.getElementById('auth-password').value;
-    if (!email || !password) return alert('請完整填寫帳號與密碼');
-    
-    // 🛡️ 新增：限制校內教職員信箱網域（請將 school.edu.tw 改為你們學校的實際網域）
-    const schoolDomain = "@school.edu.tw"; 
-    if (!email.endsWith(schoolDomain)) {
-        return alert(`認證失敗：本系統僅限使用學校信箱 (${schoolDomain}) 登入！`);
-    }
-
-    try {
-        if (isRegisterMode) {
-            await createUserWithEmailAndPassword(auth, email, password);
-            showToast('✅ 註冊成功！');
-        } else {
-            await signInWithEmailAndPassword(auth, email, password);
-        }
-    } catch (e) {
-        alert('認證失敗，請檢查帳號密碼或網路連線。\n' + e.message);
-    }
-};
+        const u = document.getElementById('auth-username').value;
+        const p = document.getElementById('auth-password').value;
+        if(!u || !p) return alert('請輸入完整內容');
+        try {
+            if(isRegisterMode) {
+                await createUserWithEmailAndPassword(auth, usernameToEmail(u), p);
+                await setDoc(doc(db, 'usernames', usernameToEmail(u)), { displayName: u });
+            } else { await signInWithEmailAndPassword(auth, usernameToEmail(u), p); }
+        } catch(e) { alert('驗證失敗，請檢查帳號密碼'); }
+    };
 
     window.toggleAuthMode = () => {
         isRegisterMode = !isRegisterMode;
