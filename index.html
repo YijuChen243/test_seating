@@ -395,11 +395,8 @@
                 mainAdminUID = rd.sharedWith || user.uid;
                 
                 if (rd.sharedWith) {
-                    const mSnap = await getDocs(query(collection(db, 'roles'), where('uid', '==', mainAdminUID), where('isMainAdmin', '==', true)));
-                    if(!mSnap.empty){
-                        const mnd = await getDoc(doc(db, 'usernames', mSnap.docs[0].id));
-                        mainAdminName = mnd.exists() ? mnd.data().displayName : "主管理者";
-                    }
+                    // 直接讀取指派時寫入的主管理者姓名，不再跨權限查詢（符合新版安全規則）
+                    mainAdminName = rd.mainAdminName || "主管理者";
                 } else {
                     mainAdminName = currentUsername;
                 }
@@ -491,7 +488,7 @@
         const c = document.getElementById('setup-class').value;
         if(!n) return alert('請選擇對象');
         const e = usernameToEmail(n);
-        await setDoc(doc(db, 'roles', e), { role: roleType, class: roleType === 'teacher' ? c : '', sharedWith: mainAdminUID }, { merge: true });
+        await setDoc(doc(db, 'roles', e), { role: roleType, class: roleType === 'teacher' ? c : '', sharedWith: mainAdminUID, mainAdminName: mainAdminName }, { merge: true });
         showToast(`已指派 ${n} 為 ${roleType === 'admin' ? '管理者' : '導師'}`); 
         refreshMemberList();
     };
