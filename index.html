@@ -602,8 +602,18 @@
         const drop = document.getElementById('classDropdown'), sDrop = document.getElementById('setup-class');
         drop.innerHTML = '<option value="">-- 選擇班級 --</option>';
         sDrop.innerHTML = '<option value="">選擇班級</option>';
-        
-        // ✨ 安全修正：改從根目錄的 classes 集合比對 ownerAdminUID 撈取
+
+        // 導師：只放自己被指派的班級，避免整包查詢被安全規則擋下
+        if (currentRole === 'teacher') {
+            if (assignedClass) {
+                const opt = document.createElement('option');
+                opt.value = assignedClass; opt.innerText = assignedClass;
+                drop.appendChild(opt);
+            }
+            return;
+        }
+
+        // 管理者：撈取自己資料庫底下的所有班級
         const q = query(collection(db, 'classes'), where('ownerAdminUID', '==', mainAdminUID));
         const snap = await getDocs(q);
         snap.forEach(d => {
