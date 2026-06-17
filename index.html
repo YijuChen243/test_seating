@@ -888,16 +888,27 @@
     };
 
     window.handleAuth = async () => {
-        const u = document.getElementById('auth-username').value;
-        const p = document.getElementById('auth-password').value;
-        if(!u || !p) return alert('請輸入完整內容');
-        try {
-            if(isRegisterMode) {
-                await createUserWithEmailAndPassword(auth, usernameToEmail(u), p);
-                await setDoc(doc(db, 'usernames', usernameToEmail(u)), { displayName: u });
-            } else { await signInWithEmailAndPassword(auth, usernameToEmail(u), p); }
-        } catch(e) { alert('驗證失敗，請檢查帳號密碼'); }
-    };
+    const u = document.getElementById('auth-username').value;
+    const p = document.getElementById('auth-password').value;
+    if(!u || !p) return alert('請輸入完整內容');
+    try {
+        if(isRegisterMode) {
+            await createUserWithEmailAndPassword(auth, usernameToEmail(u), p);
+            await setDoc(doc(db, 'usernames', usernameToEmail(u)), { displayName: u });
+        } else {
+            await signInWithEmailAndPassword(auth, usernameToEmail(u), p);
+        }
+    } catch(e) {
+        const msg = {
+            'auth/operation-not-allowed': '系統尚未開啟「電子郵件/密碼」登入方式，請聯絡管理者到 Firebase 後台啟用。',
+            'auth/invalid-email': '帳號格式無效，請只用英文字母或數字（勿用中文或空格）。',
+            'auth/weak-password': '密碼太短，至少需要 6 碼。',
+            'auth/email-already-in-use': '此帳號已被註冊，請直接登入或換一個帳號。',
+            'auth/network-request-failed': '網路連線失敗，請檢查網路後重試。'
+        }[e.code] || ('發生錯誤：' + e.code + '\n' + e.message);
+        alert(msg);
+    }
+};
 
     window.toggleAuthMode = () => {
         isRegisterMode = !isRegisterMode;
